@@ -107,8 +107,8 @@ namespace Avogadro {
       void drawAtomAngles(GLWidget *widget);
       void drawAngles(GLWidget *widget, Atom *atom, Bond *bond);
       //void drawAngles(GLWidget *widget);
-
-      void drawManipulationRectangle(GLWidget *widget);
+      Eigen::Vector3d* calculateSnapTo(GLWidget *widget, Bond *bond, Eigen::Vector3d *referencePoint, double maximumAngle);
+      void drawManipulationRectangle(GLWidget *widget, Bond *bond, Eigen::Vector3d *&referencePoint, double rgb[3]);
 
       void drawSphere(GLWidget *widget,  const Eigen::Vector3d &center, double radius, float alpha);
 

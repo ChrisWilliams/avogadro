@@ -511,7 +511,18 @@ bool BondCentricTool::paint(GLWidget *widget)
       drawAngles(widget, end, m_selectedBond);
 
     // Draw the manipulation rectangle.
-    drawManipulationRectangle(widget);
+    Eigen::Vector3d *reference = calculateSnapTo(widget, m_selectedBond, m_referencePoint, 20);
+    if (reference)
+    {
+      double rgb[3] = {1.0, 1.0, 0.2};
+      drawManipulationRectangle(widget, m_selectedBond, reference, rgb);
+      delete reference;
+    }
+    else
+    {
+      double rgb[3] = {0.0, 0.2, 0.8};
+      drawManipulationRectangle(widget, m_selectedBond, m_referencePoint, rgb);
+    }
   }
 
   return true;
@@ -592,54 +603,6 @@ void BondCentricTool::drawAngles(GLWidget *widget, Atom *atom, Bond *bond)
   }
 }
 
-/*void BondCentricTool::drawAngles(GLWidget *widget)
-{
-  if (!m_selectedBond || !widget)
-    return;
-
-  Atom *u = static_cast<Atom*>(m_selectedBond->GetBeginAtom());
-  Atom *c = static_cast<Atom*>(m_selectedBond->GetEndAtom());
-
-  if (!m_clickedAtom || c != m_clickedAtom)
-  {
-    OBBondIterator bondIter = c->EndBonds();
-    Atom *v = (Atom*)c->BeginNbrAtom(bondIter);
-
-    if (v != NULL)
-    {
-      do
-      {
-        if (v == u)
-          continue;
-
-        drawAngleSector(widget, c->pos(), u->pos(), v->pos());
-      }
-      while ((v = (Atom*)c->NextNbrAtom(bondIter)) != NULL);
-    }
-  }
-
-  u = static_cast<Atom*>(m_selectedBond->GetEndAtom());
-  c = static_cast<Atom*>(m_selectedBond->GetBeginAtom());
-
-  if (!m_clickedAtom || c != m_clickedAtom)
-  {
-    OBBondIterator bondIter = c->EndBonds();
-    Atom *v = (Atom*)c->BeginNbrAtom(bondIter);
-
-    if (v != NULL)
-    {
-      do
-      {
-        if (v == u)
-          continue;
-
-        drawAngleSector(widget, c->pos(), u->pos(), v->pos());
-      }
-      while ((v = (Atom*)c->NextNbrAtom(bondIter)) != NULL);
-    }
-  }
-}*/
-
 // ##########  drawAngleSector  ##########
 
 void BondCentricTool::drawAngleSector(GLWidget *widget, Eigen::Vector3d origin,
@@ -708,22 +671,117 @@ void BondCentricTool::drawAngleSector(GLWidget *widget, Eigen::Vector3d origin,
   widget->painter()->end();
 }
 
+// ##########  calcualteSnapTo  ##########
+
+Eigen::Vector3d* BondCentricTool::calculateSnapTo(GLWidget *widget, Bond *bond, Eigen::Vector3d *referencePoint, double maximumAngle)
+{
+  if(!referencePoint || !bond || !widget)
+  {
+    return NULL;
+  }
+  double angle = -1;
+  Eigen::Vector3d *smallestRef = NULL;
+  Atom *b = static_cast<Atom*>(bond->GetBeginAtom());
+  Atom *e = static_cast<Atom*>(bond->GetEndAtom());
+
+  OBBondIterator bondIter = b->EndBonds();
+  Atom *t = (Atom*)b->BeginNbrAtom(bondIter);
+
+  Eigen::Vector3d begin = b->pos();
+  Eigen::Vector3d end = e->pos();
+  Eigen::Vector3d target;
+  if (t != NULL)
+  {
+    do
+    {
+      if (t == e)
+        continue;
+      target = t->pos();
+      Eigen::Vector3d u = end - begin;
+      Eigen::Vector3d v = target - begin;
+      double tAngle = acos(u.dot(v) / (v.norm() * u.norm())) * 180.0 / M_PI;
+      if(!(tAngle > 1 && tAngle < 179))
+        continue;
+      Eigen::Vector3d orth1 = u.cross(v);
+      Eigen::Vector3d orth2 = referencePoint->cross(v);
+      tAngle = acos(orth1.dot(orth2) / (orth1.norm() * orth2.norm())) * 180.0 / M_PI;
+      tAngle = tAngle > 90 ? 180 - tAngle : tAngle;
+      if(angle < 0)
+      {
+        angle = tAngle;
+        smallestRef = new Vector3d(v);
+      }
+      else if(tAngle < angle)
+      {
+        angle = tAngle;
+        delete smallestRef;
+        smallestRef = new Vector3d(v);
+      }
+    }
+    while ((t = (Atom*)b->NextNbrAtom(bondIter)) != NULL);
+  }
+  
+  bondIter = e->EndBonds();
+  t = (Atom*)e->BeginNbrAtom(bondIter);
+  
+  if (t != NULL)
+  {
+    do
+    {
+      if (t == b)
+        continue;
+      target = t->pos();
+      Eigen::Vector3d u = begin - end;
+      Eigen::Vector3d v = target - end;
+      double tAngle = acos(u.dot(v) / (v.norm() * u.norm())) * 180.0 / M_PI;
+      if(!(tAngle > 1 && tAngle < 179))
+        continue;
+      Eigen::Vector3d orth1 = u.cross(v);
+      Eigen::Vector3d orth2 = referencePoint->cross(v);
+      tAngle = acos(orth1.dot(orth2) / (orth1.norm() * orth2.norm())) * 180.0 / M_PI;
+      tAngle = tAngle > 90 ? 180 - tAngle : tAngle;
+      if(angle < 0)
+      {
+        angle = tAngle;
+        smallestRef = new Vector3d(v);
+      }
+      else if(tAngle < angle)
+      {
+        angle = tAngle;
+        delete smallestRef;
+        smallestRef = new Vector3d(v);
+      }
+    }
+    while ((t = (Atom*)e->NextNbrAtom(bondIter)) != NULL);
+  }
+  if (angle > maximumAngle)
+  {
+    if (smallestRef)
+    {
+      delete smallestRef;
+    }
+    return NULL;
+  }
+  
+  return smallestRef;
+}
+
 // ##########  drawManipulationRectangle  ##########
 
-void BondCentricTool::drawManipulationRectangle(GLWidget *widget)
+void BondCentricTool::drawManipulationRectangle(GLWidget *widget, Bond *bond, Eigen::Vector3d *&referencePoint, double rgb[3])
 {
-  if (!m_selectedBond || !widget)
+  if (!bond || !widget)
     return;
 
-  Atom *leftAtom = static_cast<Atom*>(m_selectedBond->GetBeginAtom());
-  Atom *rightAtom = static_cast<Atom*>(m_selectedBond->GetEndAtom());
+  Atom *leftAtom = static_cast<Atom*>(bond->GetBeginAtom());
+  Atom *rightAtom = static_cast<Atom*>(bond->GetEndAtom());
 
   Eigen::Vector3d left = leftAtom->pos();
   Eigen::Vector3d right = rightAtom->pos();
 
   Eigen::Vector3d leftToRight = right - left;
 
-  if (!m_referencePoint)
+  if (!referencePoint)
   {
     Eigen::Vector3d x = Vector3d(1, 0, 0);
     Eigen::Vector3d y = Vector3d(0, 1, 0);
@@ -731,11 +789,11 @@ void BondCentricTool::drawManipulationRectangle(GLWidget *widget)
     Eigen::Vector3d A = leftToRight.cross(x);
     Eigen::Vector3d B = leftToRight.cross(y);
 
-    m_referencePoint = A.norm() >= B.norm() ? new Vector3d(A) : new Vector3d(B);
-    *m_referencePoint = *m_referencePoint / m_referencePoint->norm();
+    referencePoint = A.norm() >= B.norm() ? new Vector3d(A) : new Vector3d(B);
+    *referencePoint = *referencePoint / referencePoint->norm();
   }
-
-  Eigen::Vector3d vec = leftToRight.cross(*m_referencePoint);
+  
+  Eigen::Vector3d vec = leftToRight.cross(*referencePoint);
   Eigen::Vector3d planeVec = vec.cross(leftToRight);
 
   double length = 1;
@@ -747,7 +805,6 @@ void BondCentricTool::drawManipulationRectangle(GLWidget *widget)
   Eigen::Vector3d botRight = widget->camera()->modelview() * (right - planeVec);
   Eigen::Vector3d botLeft = widget->camera()->modelview() * (left - planeVec);
 
-  float rgb[3] = { 0.0, 0.2, 0.8 };
   float alpha = 0.4;
   double lineWidth = 1.5;
 
