@@ -1,4 +1,4 @@
-/**********************************************************************
+  /**********************************************************************
   GLWidget - general OpenGL display
 
   Copyright (C) 2006,2007 Geoffrey R. Hutchison
@@ -507,7 +507,7 @@ namespace Avogadro {
     if(d->molecule) {
       QObject::disconnect(d->molecule, 0, this, 0);
     }
-
+    emit moleculeChanged ( d->molecule, molecule);
     d->molecule = molecule;
 
     // clear our engine queues

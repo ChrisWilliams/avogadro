@@ -47,7 +47,6 @@ using namespace Eigen;
 // ##########  Constructor  ##########
 
 BondCentricTool::BondCentricTool(QObject *parent) : Tool(parent),
-                                                    m_molecule(NULL),
                                                     m_clickedAtom(NULL),
                                                     m_clickedBond(NULL),
                                                     m_selectedBond(NULL),
@@ -89,6 +88,31 @@ void BondCentricTool::clearData()
   m_midButtonPressed = false;
   m_rightButtonPressed = false;
   m_movedSinceButtonPressed = false;
+}
+
+// ##########  moleculeChanged  ##########
+
+void BondCentricTool::moleculeChanged(Molecule* previous, Molecule* next)
+{
+  if (previous)
+  {
+    disconnect(previous,0,this,0);
+  }
+  if (next)
+  {
+    connect((Primitive*)next,SIGNAL(primitiveRemoved(Primitive*)),this,SLOT(primitiveRemoved(Primitive*)));
+  }
+  clearData();
+}
+
+// ##########  primitiveRemoved  ##########
+
+void BondCentricTool::primitiveRemoved(Primitive *primitive)
+{
+  if (primitive == m_clickedAtom || primitive == m_clickedBond || primitive == m_selectedBond)
+  {
+    clearData();
+  }
 }
 
 // ##########  connectToolGroup  ##########
@@ -216,13 +240,15 @@ void BondCentricTool::tilt( const Eigen::Vector3d &center, double delta ) const
 
 QUndoCommand* BondCentricTool::mousePress(GLWidget *widget, const QMouseEvent *event)
 {
-  m_glwidget = widget;
-  if(m_molecule != widget->molecule())
+  if(m_glwidget != widget)
   {
-    clearData();
-    m_molecule = widget->molecule();
+    disconnect(widget,0,this,0);
+    connect(widget,SIGNAL(moleculeChanged(Molecule*,Molecule*)),this,SLOT(moleculeChanged(Molecule*,Molecule*)));
+    m_glwidget = widget;
+    moleculeChanged(NULL,m_glwidget->molecule());
+    connectToolGroup(widget);
   }
-  connectToolGroup(widget);
+ 
   m_lastDraggingPosition = event->pos();
   m_movedSinceButtonPressed = false;
 #ifdef Q_WS_MAC
@@ -440,10 +466,9 @@ QUndoCommand* BondCentricTool::wheel(GLWidget *widget, const QWheelEvent *event)
 
 bool BondCentricTool::paint(GLWidget *widget)
 {
-  if(widget->toolGroup()->activeTool() != this || m_molecule != widget->molecule())
+  if(widget->toolGroup()->activeTool() != this)
   {
     clearData();
-    m_molecule = widget->molecule();
   }
 
   if ((m_leftButtonPressed && !m_clickedBond && !isAtomInBond(m_clickedAtom, m_selectedBond))

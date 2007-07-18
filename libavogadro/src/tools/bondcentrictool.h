@@ -85,7 +85,6 @@ namespace Avogadro {
 
     protected:
       GLWidget *          m_glwidget;
-      Molecule *          m_molecule;
       Atom *              m_clickedAtom;
       Bond *              m_clickedBond;
       Bond *              m_selectedBond;
@@ -120,10 +119,13 @@ namespace Avogadro {
       void tilt( const Eigen::Vector3d &center, double delta ) const;
 
       void connectToolGroup(GLWidget *widget);
-
+      void clearData();
+      
     private Q_SLOTS:
       void toolChanged(Tool* tool);
-      void clearData();
+      void moleculeChanged(Molecule* previous, Molecule* next);
+      void primitiveRemoved(Primitive* primitive);
+
   };
 
   class BondCentricToolFactory : public QObject, public ToolFactory
