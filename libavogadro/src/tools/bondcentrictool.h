@@ -78,6 +78,7 @@ namespace Avogadro {
       virtual QUndoCommand* mouseRelease(GLWidget *widget, const QMouseEvent *event);
       virtual QUndoCommand* mouseMove(GLWidget *widget, const QMouseEvent *event);
       virtual QUndoCommand* wheel(GLWidget *widget, const QWheelEvent *event);
+      //@}
 
       virtual int usefulness() const;
 
@@ -98,23 +99,40 @@ namespace Avogadro {
       QPoint              m_lastDraggingPosition;
 
       QList<GLHit>        m_hits;
-      GLubyte *           mask1;
-      GLubyte *           mask2;
-      GLubyte *           mask3;
-      
 
+      //! \name Construction Plane/Angles Methods
+      //@{
+      /**
+       * Checks whether a given atom is at either end of a given bond.
+       *
+       * @param atom The atom that is being examined for membership of the given bond.
+       * @param bond The bond that is being examined to see if the given atom is
+       *             attached to it.
+       *
+       * @return True if the given atom is the begin or end atom of the given
+       *         bond, false otherwise, or if either of the pointers point to NULL.
+       */
       bool isAtomInBond(Atom *atom, Bond *bond);
 
+      /**
+       * Draws a sector that shows the angle between two lines around a given origin.
+       *
+       * @param widget The widget this angle-sector will be drawn on.
+       * @param origin The origin around which this angle is being calculated.
+       * @param direction1 A vector that defines the first line.
+       * @param direction2 A vector that defines the second line.
+       */
       void drawAngleSector(GLWidget *widget, Eigen::Vector3d origin,
-                           Eigen::Vector3d direction1, Eigen::Vector3d direction2, GLubyte *mask);
+                           Eigen::Vector3d direction1, Eigen::Vector3d direction2);
 
-      void drawAtomAngles(GLWidget *widget, GLubyte *mask);
-      void drawAngles(GLWidget *widget, Atom *atom, Bond *bond, GLubyte *mask);
-      //void drawAngles(GLWidget *widget);
+      void drawAtomAngles(GLWidget *widget);
+      void drawAngles(GLWidget *widget, Atom *atom, Bond *bond);
+
       Eigen::Vector3d* calculateSnapTo(GLWidget *widget, Bond *bond, Eigen::Vector3d *referencePoint, double maximumAngle);
-      void drawManipulationRectangle(GLWidget *widget, Bond *bond, Eigen::Vector3d *&referencePoint, double rgb[3], GLubyte *mask);
+      void drawManipulationRectangle(GLWidget *widget, Bond *bond, Eigen::Vector3d *&referencePoint, double rgb[3]);
 
-      void drawSphere(GLWidget *widget,  const Eigen::Vector3d &center, double radius, float alpha);
+      void drawSphere(GLWidget *widget, const Eigen::Vector3d &center, double radius, float alpha);
+      //@}
 
       void computeClick(const QPoint& p);
       void zoom( const Eigen::Vector3d &goal, double delta ) const;
@@ -124,7 +142,7 @@ namespace Avogadro {
 
       void connectToolGroup(GLWidget *widget);
       void clearData();
-      
+
     private Q_SLOTS:
       void toolChanged(Tool* tool);
       void moleculeChanged(Molecule* previous, Molecule* next);

@@ -63,111 +63,6 @@ BondCentricTool::BondCentricTool(QObject *parent) : Tool(parent),
         "Left Mouse:   Click and drag to rotate the view\n"
         "Middle Mouse: Click and drag to zoom in or out\n"
         "Right Mouse:  Click and drag to move the view"));
-  GLubyte m1[] = { 0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55 };
-    GLubyte m2[] = { 0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55,
-          0xAA, 0xAA, 0xAA, 0xAA,
-          0x55, 0x55, 0x55, 0x55, 
-          0xAA, 0xAA, 0xAA, 0xAA };
-    GLubyte m3[] = { 0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF,
-          0xFF, 0xFF, 0xFF, 0xFF, 
-          0xFF, 0xFF, 0xFF, 0xFF };
-    mask1 = new GLubyte[128];
-    mask2 = new GLubyte[128];
-    mask3 = new GLubyte[128];
-    for(int i = 0; i < 128; i++)
-    {
-      mask1[i] = m1[i];
-      mask2[i] = m2[i];
-      mask3[i] = m3[i];
-    }
   //action->setShortcut(Qt::Key_F9);
 }
 
@@ -177,9 +72,6 @@ BondCentricTool::~BondCentricTool()
 {
   delete m_referencePoint;
   m_referencePoint = NULL;
-  delete[] mask1;
-  delete[] mask2;
-  delete[] mask3;
 }
 
 // ##########  clearData  ##########
@@ -204,12 +96,14 @@ void BondCentricTool::moleculeChanged(Molecule* previous, Molecule* next)
 {
   if (previous)
   {
-    disconnect(previous,0,this,0);
+    disconnect(previous, 0 , this, 0);
   }
+
   if (next)
   {
-    connect((Primitive*)next,SIGNAL(primitiveRemoved(Primitive*)),this,SLOT(primitiveRemoved(Primitive*)));
+    connect((Primitive*)next, SIGNAL(primitiveRemoved(Primitive*)), this, SLOT(primitiveRemoved(Primitive*)));
   }
+
   clearData();
 }
 
@@ -349,15 +243,16 @@ QUndoCommand* BondCentricTool::mousePress(GLWidget *widget, const QMouseEvent *e
 {
   if(m_glwidget != widget)
   {
-    disconnect(widget,0,this,0);
-    connect(widget,SIGNAL(moleculeChanged(Molecule*,Molecule*)),this,SLOT(moleculeChanged(Molecule*,Molecule*)));
+    disconnect(widget, 0 , this, 0);
+    connect(widget, SIGNAL(moleculeChanged(Molecule*,Molecule*)), this, SLOT(moleculeChanged(Molecule*,Molecule*)));
     m_glwidget = widget;
-    moleculeChanged(NULL,m_glwidget->molecule());
+    moleculeChanged(NULL, m_glwidget->molecule());
     connectToolGroup(widget);
   }
  
   m_lastDraggingPosition = event->pos();
   m_movedSinceButtonPressed = false;
+
 #ifdef Q_WS_MAC
   m_leftButtonPressed = (event->buttons() & Qt::LeftButton 
                          && event->modifiers() == Qt::NoModifier);
@@ -611,24 +506,24 @@ bool BondCentricTool::paint(GLWidget *widget)
     // Draw the angles around the two atoms.
     if (!m_clickedAtom || m_midButtonPressed || (m_leftButtonPressed && begin != m_clickedAtom)
         || (m_rightButtonPressed && !isAtomInBond(m_clickedAtom, m_selectedBond)))
-      drawAngles(widget, begin, m_selectedBond, mask1);
+      drawAngles(widget, begin, m_selectedBond);
 
     if (!m_clickedAtom || m_midButtonPressed || (m_leftButtonPressed && end != m_clickedAtom)
          || (m_rightButtonPressed && !isAtomInBond(m_clickedAtom, m_selectedBond)))
-      drawAngles(widget, end, m_selectedBond, mask1);
+      drawAngles(widget, end, m_selectedBond);
 
     // Draw the manipulation rectangle.
     Eigen::Vector3d *reference = calculateSnapTo(widget, m_selectedBond, m_referencePoint, 20);
     if (reference)
     {
       double rgb[3] = {1.0, 1.0, 0.2};
-      drawManipulationRectangle(widget, m_selectedBond, reference, rgb, mask2);
+      drawManipulationRectangle(widget, m_selectedBond, reference, rgb);
       delete reference;
     }
     else
     {
       double rgb[3] = {0.0, 0.2, 0.8};
-      drawManipulationRectangle(widget, m_selectedBond, m_referencePoint, rgb, mask2);
+      drawManipulationRectangle(widget, m_selectedBond, m_referencePoint, rgb);
     }
   }
 
@@ -650,7 +545,7 @@ bool BondCentricTool::isAtomInBond(Atom *atom, Bond *bond)
 
 // ##########  drawAtomAngles  ##########
 
-void BondCentricTool::drawAtomAngles(GLWidget *widget, GLubyte *mask)
+void BondCentricTool::drawAtomAngles(GLWidget *widget)
 {
   if (!m_clickedAtom || !widget)
     return;
@@ -668,7 +563,7 @@ void BondCentricTool::drawAtomAngles(GLWidget *widget, GLubyte *mask)
 
       while ((v = (Atom*)m_clickedAtom->NextNbrAtom(tmpIter)) != NULL)
       {
-        drawAngleSector(widget, m_clickedAtom->pos(), u->pos(), v->pos(), mask);
+        drawAngleSector(widget, m_clickedAtom->pos(), u->pos(), v->pos());
       }
     }
     while((u = (Atom*)m_clickedAtom->NextNbrAtom(bondIter)) != NULL);
@@ -677,7 +572,7 @@ void BondCentricTool::drawAtomAngles(GLWidget *widget, GLubyte *mask)
 
 // ##########  drawAngles  ##########
 
-void BondCentricTool::drawAngles(GLWidget *widget, Atom *atom, Bond *bond, GLubyte *mask)
+void BondCentricTool::drawAngles(GLWidget *widget, Atom *atom, Bond *bond)
 {
   if (!atom || !bond)
     return;
@@ -704,7 +599,7 @@ void BondCentricTool::drawAngles(GLWidget *widget, Atom *atom, Bond *bond, GLuby
       if (v == ref)
         continue;
 
-      drawAngleSector(widget, atom->pos(), ref->pos(), v->pos(), mask);
+      drawAngleSector(widget, atom->pos(), ref->pos(), v->pos());
     }
     while ((v = (Atom*)atom->NextNbrAtom(bondIter)) != NULL);
   }
@@ -713,7 +608,7 @@ void BondCentricTool::drawAngles(GLWidget *widget, Atom *atom, Bond *bond, GLuby
 // ##########  drawAngleSector  ##########
 
 void BondCentricTool::drawAngleSector(GLWidget *widget, Eigen::Vector3d origin,
-                                      Eigen::Vector3d direction1, Eigen::Vector3d direction2, GLubyte *mask)
+                                      Eigen::Vector3d direction1, Eigen::Vector3d direction2)
 {
   widget->painter()->begin(widget);
 
@@ -724,54 +619,52 @@ void BondCentricTool::drawAngleSector(GLWidget *widget, Eigen::Vector3d origin,
   // Calculate the length of the vectors (half the length of the shortest vector.)
   double radius = qMin(u.norm(), v.norm()) * 0.5;
   double lineWidth = 1.5;
-  if(mask != mask2)
+
+  // Adjust the length of u and v to the length calculated above.
+  u = (u / u.norm()) * radius;
+  v = (v / v.norm()) * radius;
+
+  // Angle between u and v.
+  double uvAngle = acos(u.dot(v) / v.norm2()) * 180.0 / M_PI;
+
+  // If angle is less than 1 (will be approximated to 0), attempting to draw
+  // will crash, so return.
+  if (abs(uvAngle) <= 1)
+    return;
+
+  // Vector perpindicular to both u and v.
+  Eigen::Vector3d n = u.cross(v);
+
+  Eigen::Vector3d x = Vector3d(1, 0, 0);
+  Eigen::Vector3d y = Vector3d(0, 1, 0);
+
+  if (n.norm() < 1e-16)
   {
-    // Adjust the length of u and v to the length calculated above.
-    u = (u / u.norm()) * radius;
-    v = (v / v.norm()) * radius;
+    Eigen::Vector3d A = u.cross(x);
+    Eigen::Vector3d B = u.cross(y);
 
-    // Angle between u and v.
-    double uvAngle = acos(u.dot(v) / v.norm2()) * 180.0 / M_PI;
-
-    // If angle is less than 1 (will be approximated to 0), attempting to draw
-    // will crash, so return.
-    if (abs(uvAngle) <= 1)
-      return;
-
-    // Vector perpindicular to both u and v.
-    Eigen::Vector3d n = u.cross(v);
-
-    Eigen::Vector3d x = Vector3d(1, 0, 0);
-    Eigen::Vector3d y = Vector3d(0, 1, 0);
-
-    if (n.norm() < 1e-16)
-    {
-      Eigen::Vector3d A = u.cross(x);
-      Eigen::Vector3d B = u.cross(y);
-
-      n = A.norm() >= B.norm() ? A : B;
-    }
-
-    n = n / n.norm();
-
-    Matrix3d rotationMatrix;
-    rotationMatrix.loadRotation3((uvAngle / 2 * (M_PI / 180.0)), n);
-
-    Vector3d point = Vector3d(0, 0, 0);
-    rotationMatrix.multiply(u, &point);
-  
-    QString angle = QString::number(uvAngle, 10, 1) + QString::fromUtf8("°");
-    widget->painter()->drawText(point + origin, angle);
-    widget->painter()->end();
-
-    widget->painter()->begin(widget);
+    n = A.norm() >= B.norm() ? A : B;
   }
+
+  n = n / n.norm();
+
+  Matrix3d rotationMatrix;
+  rotationMatrix.loadRotation3((uvAngle / 2 * (M_PI / 180.0)), n);
+
+  Vector3d point = Vector3d(0, 0, 0);
+  rotationMatrix.multiply(u, &point);
+  
+  QString angle = QString::number(uvAngle, 10, 1) + QString::fromUtf8("°");
+  widget->painter()->drawText(point + origin, angle);
+  widget->painter()->end();
+
+  widget->painter()->begin(widget);
+
   glColor4f(0, 0.5, 0, 0.4);
   glEnable(GL_BLEND);
-  glEnable(GL_POLYGON_STIPPLE);
-  glPolygonStipple(mask);
+  glDepthMask(GL_FALSE);
   widget->painter()->drawShadedSector(origin, direction1, direction2, radius);
-  glDisable(GL_POLYGON_STIPPLE);
+  glDepthMask(GL_TRUE);
   glDisable(GL_BLEND);
 
   glColor4f(1.0, 1.0, 1.0, 1.0);
@@ -788,6 +681,7 @@ Eigen::Vector3d* BondCentricTool::calculateSnapTo(GLWidget *widget, Bond *bond, 
   {
     return NULL;
   }
+
   double angle = -1;
   Eigen::Vector3d *smallestRef = NULL;
   Atom *b = static_cast<Atom*>(bond->GetBeginAtom());
@@ -799,22 +693,29 @@ Eigen::Vector3d* BondCentricTool::calculateSnapTo(GLWidget *widget, Bond *bond, 
   Eigen::Vector3d begin = b->pos();
   Eigen::Vector3d end = e->pos();
   Eigen::Vector3d target;
+
   if (t != NULL)
   {
     do
     {
       if (t == e)
         continue;
+
       target = t->pos();
+
       Eigen::Vector3d u = end - begin;
       Eigen::Vector3d v = target - begin;
       double tAngle = acos(u.dot(v) / (v.norm() * u.norm())) * 180.0 / M_PI;
+
       if(!(tAngle > 1 && tAngle < 179))
         continue;
+
       Eigen::Vector3d orth1 = u.cross(v);
       Eigen::Vector3d orth2 = referencePoint->cross(v);
+
       tAngle = acos(orth1.dot(orth2) / (orth1.norm() * orth2.norm())) * 180.0 / M_PI;
       tAngle = tAngle > 90 ? 180 - tAngle : tAngle;
+
       if(angle < 0)
       {
         angle = tAngle;
@@ -839,16 +740,22 @@ Eigen::Vector3d* BondCentricTool::calculateSnapTo(GLWidget *widget, Bond *bond, 
     {
       if (t == b)
         continue;
+
       target = t->pos();
+
       Eigen::Vector3d u = begin - end;
       Eigen::Vector3d v = target - end;
       double tAngle = acos(u.dot(v) / (v.norm() * u.norm())) * 180.0 / M_PI;
+
       if(!(tAngle > 1 && tAngle < 179))
         continue;
+
       Eigen::Vector3d orth1 = u.cross(v);
       Eigen::Vector3d orth2 = referencePoint->cross(v);
+
       tAngle = acos(orth1.dot(orth2) / (orth1.norm() * orth2.norm())) * 180.0 / M_PI;
       tAngle = tAngle > 90 ? 180 - tAngle : tAngle;
+
       if(angle < 0)
       {
         angle = tAngle;
@@ -863,6 +770,7 @@ Eigen::Vector3d* BondCentricTool::calculateSnapTo(GLWidget *widget, Bond *bond, 
     }
     while ((t = (Atom*)e->NextNbrAtom(bondIter)) != NULL);
   }
+
   if (angle > maximumAngle)
   {
     if (smallestRef)
@@ -877,7 +785,7 @@ Eigen::Vector3d* BondCentricTool::calculateSnapTo(GLWidget *widget, Bond *bond, 
 
 // ##########  drawManipulationRectangle  ##########
 
-void BondCentricTool::drawManipulationRectangle(GLWidget *widget, Bond *bond, Eigen::Vector3d *&referencePoint, double rgb[3], GLubyte *mask)
+void BondCentricTool::drawManipulationRectangle(GLWidget *widget, Bond *bond, Eigen::Vector3d *&referencePoint, double rgb[3])
 {
   if (!bond || !widget)
     return;
@@ -921,10 +829,9 @@ void BondCentricTool::drawManipulationRectangle(GLWidget *widget, Bond *bond, Ei
 
   glEnable(GL_BLEND);
   glColor4f(rgb[0], rgb[1], rgb[2], alpha);
-  glEnable(GL_POLYGON_STIPPLE);
-  glPolygonStipple(mask);
+  glDepthMask(GL_FALSE);
   widget->painter()->drawShadedQuadrilateral(topLeft, topRight, botRight, botLeft);
-  glDisable(GL_POLYGON_STIPPLE);
+  glDepthMask(GL_TRUE);
   glDisable(GL_BLEND);
   glColor4f(1.0, 1.0, 1.0, 1.0);
   widget->painter()->drawQuadrilateral(topLeft, topRight, botRight, botLeft, lineWidth);

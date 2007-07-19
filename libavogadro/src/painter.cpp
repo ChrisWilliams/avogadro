@@ -445,15 +445,16 @@ namespace Avogadro
       points[theta-1] += origin;
       points[theta-1] = d->widget->camera()->modelview() * points[theta-1];
     }
-    
+
     // Get vectors representing the points' positions in terms of the model view.
     origin = d->widget->camera()->modelview() * origin;
     direction1 = d->widget->camera()->modelview() * direction1;
     direction2 = d->widget->camera()->modelview() * direction2;
-      
+
     glPushAttrib(GL_ALL_ATTRIB_BITS);
     glPushMatrix();
     glLoadIdentity();
+    glDisable(GL_DEPTH);
     glDisable(GL_LIGHTING);
     glDisable(GL_CULL_FACE);
 
