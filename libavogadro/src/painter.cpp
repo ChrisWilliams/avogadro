@@ -454,7 +454,6 @@ namespace Avogadro
     glPushAttrib(GL_ALL_ATTRIB_BITS);
     glPushMatrix();
     glLoadIdentity();
-    glDisable(GL_DEPTH);
     glDisable(GL_LIGHTING);
     glDisable(GL_CULL_FACE);
 
