@@ -410,6 +410,25 @@ QUndoCommand* BondCentricTool::mouseMove(GLWidget *widget, const QMouseEvent *ev
   {
     if (isAtomInBond(m_clickedAtom, m_selectedBond))
     {
+      Atom *otherAtom;
+
+      if (m_clickedAtom == static_cast<Atom*>(m_selectedBond->GetBeginAtom()))
+        otherAtom = static_cast<Atom*>(m_selectedBond->GetEndAtom());
+      else
+        otherAtom = static_cast<Atom*>(m_selectedBond->GetBeginAtom());
+
+      Vector3d clicked = m_clickedAtom->pos();
+      Vector3d other = otherAtom->pos();
+      Vector3d direction = clicked - other;
+
+      Vector3d mouseLast = widget->camera()->unProject(m_lastDraggingPosition);
+      Vector3d mouseCurr = widget->camera()->unProject(event->pos());
+      Vector3d mouseDir = mouseCurr - mouseLast;
+
+      Vector3d component = mouseDir.dot(direction) / direction.norm2() * direction;
+      clicked += component;
+
+      m_clickedAtom->SetVector(clicked.x(), clicked.y(), clicked.z());
     }
     else
     {
