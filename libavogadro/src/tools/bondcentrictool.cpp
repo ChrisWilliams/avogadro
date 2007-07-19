@@ -483,7 +483,7 @@ bool BondCentricTool::paint(GLWidget *widget)
   if (m_leftButtonPressed && m_clickedAtom && (!m_selectedBond ||
       !isAtomInBond(m_clickedAtom, m_selectedBond)))
   {
-    drawAtomAngles(widget, mask1);
+    drawAtomAngles(widget);
   }
 
   if (m_selectedBond)
