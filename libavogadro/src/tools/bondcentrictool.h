@@ -102,6 +102,8 @@ namespace Avogadro {
 
       //! \name Construction Plane/Angles Methods
       //@{
+      //! \brief Methods used to construct and draw the angle-sectors, the construction plane, and the rotation-sphere
+
       /**
        * Checks whether a given atom is at either end of a given bond.
        *
@@ -115,20 +117,53 @@ namespace Avogadro {
       bool isAtomInBond(Atom *atom, Bond *bond);
 
       /**
-       * Draws a sector that shows the angle between two lines around a given origin.
+       * Draws a sector that shows the angle between two lines from a given origin.
        *
        * @param widget The widget this angle-sector will be drawn on.
        * @param origin The origin around which this angle is being calculated.
-       * @param direction1 A vector that defines the first line.
-       * @param direction2 A vector that defines the second line.
+       * @param direction1 A vector that defines the line from the given origin
+       *                   through this point.
+       * @param direction2 A vector that defines the line from the given origin
+       *                   through this second point.
        */
       void drawAngleSector(GLWidget *widget, Eigen::Vector3d origin,
                            Eigen::Vector3d direction1, Eigen::Vector3d direction2);
 
-      void drawAtomAngles(GLWidget *widget);
+      /**
+       * Draws sectors around a given atom representing the angles between neighbouring
+       * atoms bonded with this atom.
+       *
+       * @param widget The widget the angle-sectors will be drawn on.
+       * @param atom The atom whose angles are being drawn.
+       */
+      void drawAtomAngles(GLWidget *widget, Atom *atom);
+
+      /**
+       * Draws sectors around a given atom representing the angles between neighbouring
+       * atoms bonded with this atom and an atom bonded to this atom by a given bond.
+       *
+       * @param widget The widget the angle-sectors will be drawn on.
+       * @param atom The atom whose angles are being drawn.
+       * @param bond The bond attached to the given atom that will be used as a reference
+       *             point for all the angles.
+       *
+       * @pre The given atom must be either the begin or end atom of the given bond.
+       */
       void drawAngles(GLWidget *widget, Atom *atom, Bond *bond);
 
       Eigen::Vector3d* calculateSnapTo(GLWidget *widget, Bond *bond, Eigen::Vector3d *referencePoint, double maximumAngle);
+
+      /**
+       * Draws a rectangle through a bond that can be used as a construction plane to
+       * manipulate the bond itself, or the atoms at either end of the bond.
+       *
+       * @param widget The widget the rectangle will be drawn on.
+       * @param bond The bond through which the rectangle will be drawn.
+       * @param referencePoint A point orthagonal to the bond that defines the plane
+       *                       the rectangle will be drawn on.
+       * @param rgb An array of doubles representing the red/green/blue values of the
+       *            color for the rectangle.
+       */
       void drawManipulationRectangle(GLWidget *widget, Bond *bond, Eigen::Vector3d *&referencePoint, double rgb[3]);
 
       void drawSphere(GLWidget *widget, const Eigen::Vector3d &center, double radius, float alpha);

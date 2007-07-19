@@ -483,7 +483,7 @@ bool BondCentricTool::paint(GLWidget *widget)
   if (m_leftButtonPressed && m_clickedAtom && (!m_selectedBond ||
       !isAtomInBond(m_clickedAtom, m_selectedBond)))
   {
-    drawAtomAngles(widget);
+    drawAtomAngles(widget, m_clickedAtom);
   }
 
   if (m_selectedBond)
@@ -545,14 +545,14 @@ bool BondCentricTool::isAtomInBond(Atom *atom, Bond *bond)
 
 // ##########  drawAtomAngles  ##########
 
-void BondCentricTool::drawAtomAngles(GLWidget *widget)
+void BondCentricTool::drawAtomAngles(GLWidget *widget, Atom *atom)
 {
   if (!m_clickedAtom || !widget)
     return;
 
-  OBBondIterator bondIter = m_clickedAtom->EndBonds();
+  OBBondIterator bondIter = atom->EndBonds();
 
-  Atom *u = (Atom*)m_clickedAtom->BeginNbrAtom(bondIter);
+  Atom *u = (Atom*)atom->BeginNbrAtom(bondIter);
   Atom *v = NULL;
 
   if (u != NULL)
@@ -561,12 +561,12 @@ void BondCentricTool::drawAtomAngles(GLWidget *widget)
     {
       OBBondIterator tmpIter = bondIter;
 
-      while ((v = (Atom*)m_clickedAtom->NextNbrAtom(tmpIter)) != NULL)
+      while ((v = (Atom*)atom->NextNbrAtom(tmpIter)) != NULL)
       {
-        drawAngleSector(widget, m_clickedAtom->pos(), u->pos(), v->pos());
+        drawAngleSector(widget, atom->pos(), u->pos(), v->pos());
       }
     }
-    while((u = (Atom*)m_clickedAtom->NextNbrAtom(bondIter)) != NULL);
+    while((u = (Atom*)atom->NextNbrAtom(bondIter)) != NULL);
   }
 }
 
@@ -576,6 +576,8 @@ void BondCentricTool::drawAngles(GLWidget *widget, Atom *atom, Bond *bond)
 {
   if (!atom || !bond)
     return;
+
+  assert(isAtomInBond(atom, bond));
 
   Atom *ref = NULL;
   if (atom == static_cast<Atom*>(bond->GetBeginAtom()))
