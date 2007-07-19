@@ -150,7 +150,6 @@ int BondCentricTool::usefulness() const
 
 void BondCentricTool::computeClick(const QPoint& p)
 {
-  //Bond *oldBond = m_clickedBond;
   int oldName = m_selectedBond ? m_selectedBond->GetIdx() : -1;
   m_clickedAtom = NULL;
   m_clickedBond = NULL;
@@ -658,13 +657,11 @@ void BondCentricTool::drawAngleSector(GLWidget *widget, Eigen::Vector3d origin,
 
   widget->painter()->begin(widget);
 
-  //Color(0, 0.5, 0, 0.4).applyAsMaterials();
   glColor4f(0, 0.5, 0, 0.4);
   glEnable(GL_BLEND);
   widget->painter()->drawShadedSector(origin, direction1, direction2, radius);
   glDisable(GL_BLEND);
 
-  //Color(1.0, 1.0, 1.0, 1.0).applyAsMaterials();
   glColor4f(1.0, 1.0, 1.0, 1.0);
   widget->painter()->drawArc(origin, direction1, direction2, radius, lineWidth);
 

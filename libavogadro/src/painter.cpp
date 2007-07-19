@@ -432,7 +432,7 @@ namespace Avogadro
 
     // Calculate the points along the curve at each degree increment until we
     // reach the next line.
-    Vector3d *points = new Vector3d[(int)uvAngle*2-1];
+    Vector3d points[360];
     for (int theta = 1; theta < (uvAngle * 2); theta++)
     {
       // Create a Matrix that represents a rotation about a vector perpindicular
@@ -468,8 +468,7 @@ namespace Avogadro
 
     glPopMatrix();
     glPopAttrib();
-    
-    delete[] points;
+ 
   }
 
   void Painter::drawArc(Eigen::Vector3d origin, Eigen::Vector3d direction1,
@@ -520,7 +519,7 @@ namespace Avogadro
 
     // Calculate the points along the curve at each degree increment until we
     // reach the next line.
-    Vector3d *points = new Vector3d[(int)uvAngle*2-1];
+    Vector3d points[360];
     for (int theta = 1; theta < (uvAngle * 2); theta++)
     {
       // Create a Matrix that represents a rotation about a vector perpindicular
@@ -557,7 +556,7 @@ namespace Avogadro
 
     glPopMatrix();
     glPopAttrib();
-    delete[] points;
+
   }
 
   void Painter::drawShadedQuadrilateral(Eigen::Vector3d point1, Eigen::Vector3d point2,
