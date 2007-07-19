@@ -98,17 +98,21 @@ namespace Avogadro {
       QPoint              m_lastDraggingPosition;
 
       QList<GLHit>        m_hits;
+      GLubyte *           mask1;
+      GLubyte *           mask2;
+      GLubyte *           mask3;
+      
 
       bool isAtomInBond(Atom *atom, Bond *bond);
 
       void drawAngleSector(GLWidget *widget, Eigen::Vector3d origin,
-                           Eigen::Vector3d direction1, Eigen::Vector3d direction2);
+                           Eigen::Vector3d direction1, Eigen::Vector3d direction2, GLubyte *mask);
 
-      void drawAtomAngles(GLWidget *widget);
-      void drawAngles(GLWidget *widget, Atom *atom, Bond *bond);
+      void drawAtomAngles(GLWidget *widget, GLubyte *mask);
+      void drawAngles(GLWidget *widget, Atom *atom, Bond *bond, GLubyte *mask);
       //void drawAngles(GLWidget *widget);
       Eigen::Vector3d* calculateSnapTo(GLWidget *widget, Bond *bond, Eigen::Vector3d *referencePoint, double maximumAngle);
-      void drawManipulationRectangle(GLWidget *widget, Bond *bond, Eigen::Vector3d *&referencePoint, double rgb[3]);
+      void drawManipulationRectangle(GLWidget *widget, Bond *bond, Eigen::Vector3d *&referencePoint, double rgb[3], GLubyte *mask);
 
       void drawSphere(GLWidget *widget,  const Eigen::Vector3d &center, double radius, float alpha);
 
