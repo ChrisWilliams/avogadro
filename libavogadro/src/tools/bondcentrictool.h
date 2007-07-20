@@ -151,6 +151,28 @@ namespace Avogadro {
        */
       void drawAngles(GLWidget *widget, Atom *atom, Bond *bond);
 
+      /**
+       * Calculates whether the manipulation plane is close enough to any atoms (that
+       * are 1 bond away from either of the atoms attached to the given bond) to
+       * 'snap-to' them.
+       *
+       * NOTE: Any atoms that lie along the same line as the bond are disregarded in
+       * the calculations otherwise the plane would always try snap-to them as their
+       * angle is 0.
+       *
+       * @param widget The widget the molecule and construction plane are on.
+       * @param bond The bond through which the manipulation plane lies.
+       * @param referencePoint The current reference point that defines the manipulation
+       *                       plane.
+       * @param maximumAngle The maximum angle between the current reference point
+       *                     and any atom that determines whether or not the plane is
+       *                     close enough to snap-to the atom.
+       *
+       * @return A vector representing the closest Atom to the manipulation plane, to
+       *         be used as the reference point for drawing the plane, if any atom is
+       *         close enough.  If no atom is close enough to 'snap-to', NULL is
+       *         returned.
+       */
       Eigen::Vector3d* calculateSnapTo(GLWidget *widget, Bond *bond, Eigen::Vector3d *referencePoint, double maximumAngle);
 
       /**
@@ -166,6 +188,14 @@ namespace Avogadro {
        */
       void drawManipulationRectangle(GLWidget *widget, Bond *bond, Eigen::Vector3d *&referencePoint, double rgb[3]);
 
+      /**
+       * Draws a sphere of a given radius around a given vector.
+       *
+       * @param widget The widget the sphere will be drawn on.
+       * @param center The center of the sphere.
+       * @param radius The radius of the sphere.
+       * @param alpha The alpha value that determines the opacity of the sphere.
+       */
       void drawSphere(GLWidget *widget, const Eigen::Vector3d &center, double radius, float alpha);
       //@}
 
@@ -176,6 +206,12 @@ namespace Avogadro {
       void tilt( const Eigen::Vector3d &center, double delta ) const;
 
       void connectToolGroup(GLWidget *widget);
+
+      /**
+       * Clears any data and frees up any memory that is used by the tool.  This
+       * procedure should be used when the tool is changed, the molecule cleared,
+       * or the program exits etc.
+       */
       void clearData();
 
     private Q_SLOTS:

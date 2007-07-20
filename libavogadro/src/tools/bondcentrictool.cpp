@@ -410,6 +410,8 @@ QUndoCommand* BondCentricTool::mouseMove(GLWidget *widget, const QMouseEvent *ev
   {
     if (isAtomInBond(m_clickedAtom, m_selectedBond))
     {
+      // Adjust the length of the bond following the mouse movement.
+
       Atom *otherAtom;
 
       if (m_clickedAtom == static_cast<Atom*>(m_selectedBond->GetBeginAtom()))
@@ -432,7 +434,7 @@ QUndoCommand* BondCentricTool::mouseMove(GLWidget *widget, const QMouseEvent *ev
     }
     else
     {
-      // translate the molecule following mouse movement
+      // Translate the molecule following mouse movement.
       translate(m_glwidget->center(), m_lastDraggingPosition, event->pos());
     }
   }
@@ -524,11 +526,11 @@ bool BondCentricTool::paint(GLWidget *widget)
 
     // Draw the angles around the two atoms.
     if (!m_clickedAtom || m_midButtonPressed || (m_leftButtonPressed && begin != m_clickedAtom)
-        || (m_rightButtonPressed && !isAtomInBond(m_clickedAtom, m_selectedBond)))
+         || (m_rightButtonPressed && end != m_clickedAtom/*!isAtomInBond(m_clickedAtom, m_selectedBond)*/))
       drawAngles(widget, begin, m_selectedBond);
 
     if (!m_clickedAtom || m_midButtonPressed || (m_leftButtonPressed && end != m_clickedAtom)
-         || (m_rightButtonPressed && !isAtomInBond(m_clickedAtom, m_selectedBond)))
+         || (m_rightButtonPressed && begin != m_clickedAtom/*!isAtomInBond(m_clickedAtom, m_selectedBond)*/))
       drawAngles(widget, end, m_selectedBond);
 
     // Draw the manipulation rectangle.
