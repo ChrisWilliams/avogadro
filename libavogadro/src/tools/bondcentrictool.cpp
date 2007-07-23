@@ -150,42 +150,52 @@ int BondCentricTool::usefulness() const
 
 // ##########  computeClick  ##########
 
-void BondCentricTool::computeClick(const QPoint& p)
+Primitive *BondCentricTool::computeClick(GLWidget *widget, const QPoint& p)
 {
   int oldName = m_selectedBond ? m_selectedBond->GetIdx() : -1;
+  Atom *clickedAtom = NULL;
+  Bond *clickedBond = NULL;
+
   m_clickedAtom = NULL;
   m_clickedBond = NULL;
 
   // Perform a OpenGL selection and retrieve the list of hits.
-  m_hits = m_glwidget->hits(p.x()-SEL_BOX_HALF_SIZE,
+  m_hits = widget->hits(p.x()-SEL_BOX_HALF_SIZE,
       p.y()-SEL_BOX_HALF_SIZE,
       SEL_BOX_SIZE, SEL_BOX_SIZE);
 
-  Molecule *molecule = m_glwidget->molecule();
+  Molecule *molecule = widget->molecule();
 
   // Find the first atom (if any) in hits - this will be the closest
   foreach(GLHit hit, m_hits)
   {
     if (hit.type() == Primitive::BondType)
     {
-      m_clickedBond = static_cast<Bond *>(molecule->GetBond(hit.name()-1));
+      clickedBond = static_cast<Bond *>(molecule->GetBond(hit.name()-1));
+
       if (m_leftButtonPressed)
       {
-        m_selectedBond = m_clickedBond;
+        m_selectedBond = clickedBond;
 
         if ((int)m_selectedBond->GetIdx() != oldName) {
           delete m_referencePoint;
           m_referencePoint = NULL;
         }
       }
-      return;
+
+      m_clickedBond = clickedBond;
+      return clickedBond;
     }
     else if (hit.type() == Primitive::AtomType)
     {
-      m_clickedAtom = static_cast<Atom *>(molecule->GetAtom(hit.name()));
-      return;
+      clickedAtom = static_cast<Atom *>(molecule->GetAtom(hit.name()));
+
+      m_clickedAtom = clickedAtom;
+      return clickedAtom;
     }
   }
+
+  return NULL;
 }
 
 // ##########  zoom  ##########
@@ -268,7 +278,7 @@ QUndoCommand* BondCentricTool::mousePress(GLWidget *widget, const QMouseEvent *e
   m_midButtonPressed = (event->buttons() & Qt::MidButton);
   m_rightButtonPressed = (event->buttons() & Qt::RightButton);
 #endif
-  computeClick(event->pos());
+  computeClick(widget, event->pos());
 
   widget->update();
   return 0;
@@ -450,7 +460,7 @@ QUndoCommand* BondCentricTool::mouseMove(GLWidget *widget, const QMouseEvent *ev
 QUndoCommand* BondCentricTool::wheel(GLWidget *widget, const QWheelEvent *event)
 {
   m_glwidget = widget;
-  computeClick(event->pos());
+  computeClick(widget, event->pos());
 
   if (m_clickedAtom)
   {
@@ -568,7 +578,7 @@ bool BondCentricTool::isAtomInBond(Atom *atom, Bond *bond)
 
 void BondCentricTool::drawAtomAngles(GLWidget *widget, Atom *atom)
 {
-  if (!m_clickedAtom || !widget)
+  if (!atom || !widget)
     return;
 
   OBBondIterator bondIter = atom->EndBonds();

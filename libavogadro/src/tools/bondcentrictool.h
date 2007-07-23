@@ -199,7 +199,7 @@ namespace Avogadro {
       void drawSphere(GLWidget *widget, const Eigen::Vector3d &center, double radius, float alpha);
       //@}
 
-      void computeClick(const QPoint& p);
+      Primitive *computeClick(GLWidget *widget, const QPoint& p);
       void zoom( const Eigen::Vector3d &goal, double delta ) const;
       void translate( const Eigen::Vector3d &what, const QPoint &from, const QPoint &to ) const;
       void rotate( const Eigen::Vector3d &center, double deltaX, double deltaY ) const;
