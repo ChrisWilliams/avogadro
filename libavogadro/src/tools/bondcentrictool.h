@@ -72,8 +72,6 @@ namespace Avogadro {
       //! \name Tool Methods
       //@{
       //! \brief Callback methods for ui.actions on the canvas.
-      /*!
-      */
       virtual QUndoCommand* mousePress(GLWidget *widget, const QMouseEvent *event);
       virtual QUndoCommand* mouseRelease(GLWidget *widget, const QMouseEvent *event);
       virtual QUndoCommand* mouseMove(GLWidget *widget, const QMouseEvent *event);
@@ -86,19 +84,20 @@ namespace Avogadro {
 
     protected:
       GLWidget *          m_glwidget;
+
       Atom *              m_clickedAtom;
       Bond *              m_clickedBond;
       Bond *              m_selectedBond;
+
       Eigen::Vector3d *   m_referencePoint;
       ToolGroup *         m_toolGroup;
+
       bool                m_leftButtonPressed;  // rotation
       bool                m_midButtonPressed;   // scale / zoom
       bool                m_rightButtonPressed; // translation
       bool                m_movedSinceButtonPressed;
 
       QPoint              m_lastDraggingPosition;
-
-      QList<GLHit>        m_hits;
 
       //! \name Construction Plane/Angles Methods
       //@{
@@ -173,7 +172,9 @@ namespace Avogadro {
        *         close enough.  If no atom is close enough to 'snap-to', NULL is
        *         returned.
        */
-      Eigen::Vector3d* calculateSnapTo(GLWidget *widget, Bond *bond, Eigen::Vector3d *referencePoint, double maximumAngle);
+      Eigen::Vector3d* calculateSnapTo(GLWidget *widget, Bond *bond, 
+                                       Eigen::Vector3d *referencePoint, 
+                                       double maximumAngle);
 
       /**
        * Draws a rectangle through a bond that can be used as a construction plane to
@@ -186,7 +187,8 @@ namespace Avogadro {
        * @param rgb An array of doubles representing the red/green/blue values of the
        *            color for the rectangle.
        */
-      void drawManipulationRectangle(GLWidget *widget, Bond *bond, Eigen::Vector3d *&referencePoint, double rgb[3]);
+      void drawManipulationRectangle(GLWidget *widget, Bond *bond, 
+                                     Eigen::Vector3d *&referencePoint, double rgb[3]);
 
       /**
        * Draws a sphere of a given radius around a given vector.
@@ -196,16 +198,38 @@ namespace Avogadro {
        * @param radius The radius of the sphere.
        * @param alpha The alpha value that determines the opacity of the sphere.
        */
-      void drawSphere(GLWidget *widget, const Eigen::Vector3d &center, double radius, float alpha);
+      void drawSphere(GLWidget *widget, const Eigen::Vector3d &center, double radius, 
+                      float alpha);
       //@}
 
+      /**
+       * Compute whether a given point resides over any Atoms or Bonds and
+       * return the uppermost Primitive.
+       *
+       * @param widget The widget being checked if its Molecule was 'clicked on'
+       *               by the given point.
+       * @param p The point representing the mouse coordinates of the click.
+       *
+       * @return A Primitive (Atom/Bond) representing the Atom/Bond that was
+       *         clicked on based on the given QPoint p.  NULL is returned if
+       *         there are no Atoms/Bonds at the given point.
+       */
       Primitive *computeClick(GLWidget *widget, const QPoint& p);
+
       void zoom( const Eigen::Vector3d &goal, double delta ) const;
       void translate( const Eigen::Vector3d &what, const QPoint &from, const QPoint &to ) const;
       void rotate( const Eigen::Vector3d &center, double deltaX, double deltaY ) const;
       void tilt( const Eigen::Vector3d &center, double delta ) const;
 
-      void connectToolGroup(GLWidget *widget);
+      /**
+       * Connects this tool to the widget's ToolGroup so as to detect the signal
+       * emitted when the tool changes.
+       *
+       * @param widget The GLWidget containing the ToolGroup being connected to.
+       * @param toolGroup A pointer that will be (or is already) set to the
+       *                  ToolGroup being connected to.
+       */
+      void connectToolGroup(GLWidget *widget, ToolGroup *toolGroup);
 
       /**
        * Clears any data and frees up any memory that is used by the tool.  This

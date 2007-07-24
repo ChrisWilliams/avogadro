@@ -119,14 +119,14 @@ void BondCentricTool::primitiveRemoved(Primitive *primitive)
 
 // ##########  connectToolGroup  ##########
 
-void BondCentricTool::connectToolGroup(GLWidget *widget)
+void BondCentricTool::connectToolGroup(GLWidget *widget, ToolGroup *toolGroup)
 {
-  if(widget->toolGroup() != m_toolGroup && widget->toolGroup())
+  if(widget->toolGroup() != toolGroup && widget->toolGroup())
   {
     disconnect(widget->toolGroup(), 0, this, 0);
     connect(widget->toolGroup(), SIGNAL(toolActivated(Tool*)),
           this, SLOT(toolChanged(Tool*)));
-    m_toolGroup = widget->toolGroup();
+    toolGroup = widget->toolGroup();
   }
 }
 
@@ -152,45 +152,26 @@ int BondCentricTool::usefulness() const
 
 Primitive *BondCentricTool::computeClick(GLWidget *widget, const QPoint& p)
 {
-  int oldName = m_selectedBond ? m_selectedBond->GetIdx() : -1;
-  Atom *clickedAtom = NULL;
-  Bond *clickedBond = NULL;
-
-  m_clickedAtom = NULL;
-  m_clickedBond = NULL;
-
-  // Perform a OpenGL selection and retrieve the list of hits.
-  m_hits = widget->hits(p.x()-SEL_BOX_HALF_SIZE,
-      p.y()-SEL_BOX_HALF_SIZE,
-      SEL_BOX_SIZE, SEL_BOX_SIZE);
+  // Get the list of hits
+  QList<GLHit> hits = widget->hits(p.x()-SEL_BOX_HALF_SIZE,
+                                   p.y()-SEL_BOX_HALF_SIZE,
+                                   SEL_BOX_SIZE, SEL_BOX_SIZE);
 
   Molecule *molecule = widget->molecule();
 
   // Find the first atom (if any) in hits - this will be the closest
-  foreach(GLHit hit, m_hits)
+  foreach(GLHit hit, hits)
   {
     if (hit.type() == Primitive::BondType)
     {
-      clickedBond = static_cast<Bond *>(molecule->GetBond(hit.name()-1));
-
-      if (m_leftButtonPressed)
-      {
-        m_selectedBond = clickedBond;
-
-        if ((int)m_selectedBond->GetIdx() != oldName) {
-          delete m_referencePoint;
-          m_referencePoint = NULL;
-        }
-      }
-
-      m_clickedBond = clickedBond;
+      // Bond hit first, return the clicked Bond.
+      Bond *clickedBond = static_cast<Bond *>(molecule->GetBond(hit.name()-1));
       return clickedBond;
     }
     else if (hit.type() == Primitive::AtomType)
     {
-      clickedAtom = static_cast<Atom *>(molecule->GetAtom(hit.name()));
-
-      m_clickedAtom = clickedAtom;
+      // Atom hit first, return the clicked Atom.
+      Atom *clickedAtom = static_cast<Atom *>(molecule->GetAtom(hit.name()));
       return clickedAtom;
     }
   }
@@ -257,9 +238,9 @@ QUndoCommand* BondCentricTool::mousePress(GLWidget *widget, const QMouseEvent *e
     connect(widget, SIGNAL(moleculeChanged(Molecule*,Molecule*)), this, SLOT(moleculeChanged(Molecule*,Molecule*)));
     m_glwidget = widget;
     moleculeChanged(NULL, m_glwidget->molecule());
-    connectToolGroup(widget);
+    connectToolGroup(widget, m_toolGroup);
   }
- 
+
   m_lastDraggingPosition = event->pos();
   m_movedSinceButtonPressed = false;
 
@@ -278,9 +259,40 @@ QUndoCommand* BondCentricTool::mousePress(GLWidget *widget, const QMouseEvent *e
   m_midButtonPressed = (event->buttons() & Qt::MidButton);
   m_rightButtonPressed = (event->buttons() & Qt::RightButton);
 #endif
-  computeClick(widget, event->pos());
 
-  widget->update();
+  m_clickedAtom = NULL;
+  m_clickedBond = NULL;
+
+  int oldName = m_selectedBond ? m_selectedBond->GetIdx() : -1;
+
+  // Check if the mouse clicked on any Atoms or Bonds.
+  Primitive *clickedPrim = computeClick(m_glwidget, event->pos());
+
+  if (clickedPrim && clickedPrim->type() == Primitive::AtomType)
+  {
+    // Atom clicked on.
+    m_clickedAtom = (Atom*)clickedPrim;
+  }
+  else if (clickedPrim && clickedPrim->type() == Primitive::BondType)
+  {
+    // Bond clicked on.
+    m_clickedBond = (Bond*)clickedPrim;
+
+    // If the Bond was clicked on with the left mouse button, set it as the
+    // currently selected bond and reset the reference point (if the Bond has
+    // changed).
+    if (m_leftButtonPressed)
+    {
+      m_selectedBond = m_clickedBond;
+
+      if ((int)m_selectedBond->GetIdx() != oldName) {
+        delete m_referencePoint;
+        m_referencePoint = NULL;
+      }
+    }
+  }
+
+  m_glwidget->update();
   return 0;
 }
 
@@ -288,7 +300,7 @@ QUndoCommand* BondCentricTool::mousePress(GLWidget *widget, const QMouseEvent *e
 
 QUndoCommand* BondCentricTool::mouseRelease(GLWidget *widget, const QMouseEvent*)
 {
-  if (!m_hits.size() && !m_movedSinceButtonPressed) {
+  if (!m_clickedAtom && !m_clickedBond && !m_movedSinceButtonPressed) {
     delete m_referencePoint;
     m_referencePoint = NULL;
     m_selectedBond = NULL;
@@ -301,7 +313,7 @@ QUndoCommand* BondCentricTool::mouseRelease(GLWidget *widget, const QMouseEvent*
   m_clickedAtom = NULL;
   m_clickedBond = NULL;
 
-  widget->update();
+  m_glwidget->update();
   return 0;
 }
 
@@ -460,17 +472,24 @@ QUndoCommand* BondCentricTool::mouseMove(GLWidget *widget, const QMouseEvent *ev
 QUndoCommand* BondCentricTool::wheel(GLWidget *widget, const QWheelEvent *event)
 {
   m_glwidget = widget;
-  computeClick(widget, event->pos());
 
-  if (m_clickedAtom)
+  m_clickedAtom = NULL;
+  m_clickedBond = NULL;
+
+  Primitive *clickedPrim = computeClick(m_glwidget, event->pos());
+
+  if (clickedPrim && clickedPrim->type() == Primitive::AtomType)
   {
+    Atom *clickedAtom = (Atom*)clickedPrim;
     // Perform the zoom toward clicked atom
-    zoom(m_clickedAtom->pos(), - MOUSE_WHEEL_SPEED * event->delta());
+    zoom(clickedAtom->pos(), - MOUSE_WHEEL_SPEED * event->delta());
   }
-  else if (m_clickedBond)
+  else if (clickedPrim && clickedPrim->type() == Primitive::BondType)
   {
-    Atom *begin = static_cast<Atom *>(m_clickedBond->GetBeginAtom());
-    Atom *end = static_cast<Atom *>(m_clickedBond->GetEndAtom());
+    Bond *clickedBond = (Bond*)clickedPrim;
+
+    Atom *begin = static_cast<Atom *>(clickedBond->GetBeginAtom());
+    Atom *end = static_cast<Atom *>(clickedBond->GetEndAtom());
 
     Vector3d btoe = end->pos() - begin->pos();
     double newLen = btoe.norm() / 2;
@@ -488,9 +507,6 @@ QUndoCommand* BondCentricTool::wheel(GLWidget *widget, const QWheelEvent *event)
   }
 
   m_glwidget->update();
-
-  m_clickedAtom = NULL;
-  m_clickedBond = NULL;
 
   return 0;
 }
