@@ -90,6 +90,8 @@ namespace Avogadro {
       Bond *              m_selectedBond;
 
       Eigen::Vector3d *   m_referencePoint;
+      Eigen::Vector3d *   m_currentReference;
+      bool                m_snapped;
       ToolGroup *         m_toolGroup;
 
       bool                m_leftButtonPressed;  // rotation
@@ -188,7 +190,7 @@ namespace Avogadro {
        *            color for the rectangle.
        */
       void drawManipulationRectangle(GLWidget *widget, Bond *bond, 
-                                     Eigen::Vector3d *&referencePoint, double rgb[3]);
+                                     Eigen::Vector3d *referencePoint, double rgb[3]);
 
       /**
        * Draws a sphere of a given radius around a given vector.

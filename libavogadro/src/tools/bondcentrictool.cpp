@@ -52,6 +52,8 @@ BondCentricTool::BondCentricTool(QObject *parent) : Tool(parent),
                                                     m_clickedBond(NULL),
                                                     m_selectedBond(NULL),
                                                     m_referencePoint(NULL),
+                                                    m_currentReference(NULL),
+                                                    m_snapped(false),
                                                     m_toolGroup(NULL),
                                                     m_leftButtonPressed(false),
                                                     m_midButtonPressed(false),
@@ -73,6 +75,8 @@ BondCentricTool::~BondCentricTool()
 {
   delete m_referencePoint;
   m_referencePoint = NULL;
+  delete m_currentReference;
+  m_currentReference = NULL;
 }
 
 // ##########  clearData  ##########
@@ -84,11 +88,14 @@ void BondCentricTool::clearData()
   m_selectedBond = NULL;
   delete m_referencePoint;
   m_referencePoint = NULL;
+  delete m_currentReference;
+  m_currentReference = NULL;
   m_toolGroup = NULL;
   m_leftButtonPressed = false;
   m_midButtonPressed = false;
   m_rightButtonPressed = false;
   m_movedSinceButtonPressed = false;
+  m_snapped = false;
 }
 
 // ##########  moleculeChanged  ##########
@@ -289,6 +296,35 @@ QUndoCommand* BondCentricTool::mousePress(GLWidget *widget, const QMouseEvent *e
       if ((int)m_selectedBond->GetIdx() != oldName) {
         delete m_referencePoint;
         m_referencePoint = NULL;
+        delete m_currentReference;
+        m_currentReference = NULL;
+        m_snapped = false;
+
+        Atom *leftAtom = static_cast<Atom*>(m_selectedBond->GetBeginAtom());
+        Atom *rightAtom = static_cast<Atom*>(m_selectedBond->GetEndAtom());
+
+        Vector3d left = leftAtom->pos();
+        Vector3d right = rightAtom->pos();
+
+        Vector3d leftToRight = right - left;
+        Vector3d x = Vector3d(1, 0, 0);
+        Vector3d y = Vector3d(0, 1, 0);
+
+        Vector3d A = leftToRight.cross(x);
+        Vector3d B = leftToRight.cross(y);
+
+        m_referencePoint = A.norm() >= B.norm() ? new Vector3d(A) : new Vector3d(B);
+        *m_referencePoint = m_referencePoint->normalized();
+        Vector3d *reference = calculateSnapTo(widget, m_selectedBond, m_referencePoint, 10);
+        if (reference)
+        {
+          m_snapped = true;
+          m_currentReference = reference;
+        }
+        else
+        {
+          m_currentReference = new Vector3d(*m_referencePoint);
+        }
       }
     }
   }
@@ -304,6 +340,9 @@ QUndoCommand* BondCentricTool::mouseRelease(GLWidget *widget, const QMouseEvent*
   if (!m_clickedAtom && !m_clickedBond && !m_movedSinceButtonPressed) {
     delete m_referencePoint;
     m_referencePoint = NULL;
+    delete m_currentReference;
+    m_currentReference = NULL;
+    m_snapped = false;
     m_selectedBond = NULL;
   }
 
@@ -360,7 +399,7 @@ QUndoCommand* BondCentricTool::mouseMove(GLWidget *widget, const QMouseEvent *ev
       Vector3d direction = zAxis.cross(beginToEnd);
       direction = direction / direction.norm();
 
-      Vector3d mouseMoved = Vector3d(deltaDragging.x(), - deltaDragging.y(), 0);
+      Vector3d mouseMoved = Vector3d( - deltaDragging.x(), - deltaDragging.y(), 0);
 
       double magnitude = mouseMoved.dot(direction) / direction.norm();
 
@@ -368,10 +407,81 @@ QUndoCommand* BondCentricTool::mouseMove(GLWidget *widget, const QMouseEvent *ev
 
       rotationMatrix.loadRotation3((magnitude * (M_PI / 180.0)), rotationVector);
       rotationMatrix.multiply(*m_referencePoint, m_referencePoint);
+      Eigen::Vector3d *reference = calculateSnapTo(widget, m_selectedBond, m_referencePoint, 10);
+      if (reference)
+      {
+        m_snapped = true;
+        delete m_currentReference;
+        m_currentReference = reference;
+      }
+      else
+      {
+        m_snapped = false;
+        delete m_currentReference;
+        m_currentReference = new Vector3d(*m_referencePoint);
+      }
     }
     else if (isAtomInBond(m_clickedAtom, m_selectedBond))
     {
       //Do atom rotation.
+      Atom *otherAtom;
+
+      if (m_clickedAtom == static_cast<Atom*>(m_selectedBond->GetBeginAtom()))
+        otherAtom = static_cast<Atom*>(m_selectedBond->GetEndAtom());
+      else
+        otherAtom = static_cast<Atom*>(m_selectedBond->GetBeginAtom());
+
+      Vector3d center = otherAtom->pos();
+      Vector3d clicked = m_clickedAtom->pos();
+      Vector3d direction = clicked - center;
+      Vector3d rotationSpace = m_currentReference->cross(direction);
+      rotationSpace = rotationSpace.normalized();
+      Vector3d centerProj = widget->camera()->project(center);
+      centerProj -= Vector3d(0,0,centerProj.z());
+      Vector3d clickedProj = widget->camera()->project(clicked);
+      clickedProj -= Vector3d(0,0,clickedProj.z());
+      Vector3d referenceProj = widget->camera()->project(*m_currentReference + center);
+      referenceProj -= Vector3d(0,0,referenceProj.z());
+      Vector3d referenceVector = referenceProj - centerProj;
+      referenceVector = referenceVector.normalized();
+      Vector3d directionVector = clickedProj - centerProj;
+      directionVector = directionVector.normalized();
+      Vector3d rotationVector = referenceVector.cross(directionVector);
+      rotationVector = rotationVector.normalized();
+      Vector3d currMouseVector = Vector3d(event->pos().x(),event->pos().y(),0) - centerProj;
+      if(currMouseVector.norm() > 5)
+      {
+        currMouseVector = currMouseVector.normalized();
+        double mouseAngle = acos(directionVector.dot(currMouseVector) / currMouseVector.norm2());
+        if(mouseAngle > 0)
+        {
+          Vector3d tester;
+          Matrix3d rotationMatrix;
+          double dirLength = direction.norm();
+          double currRefLength = m_currentReference->norm();
+          double refLength = m_referencePoint->norm();
+
+          rotationMatrix.loadRotation3(mouseAngle, rotationVector);
+          rotationMatrix.multiply(directionVector, &tester);
+          double testAngle1 = acos(tester.dot(currMouseVector) / currMouseVector.norm2());
+
+          rotationMatrix.loadRotation3((2*M_PI) - mouseAngle, rotationVector);
+          rotationMatrix.multiply(directionVector, &tester);
+          double testAngle2 = acos(tester.dot(currMouseVector) / currMouseVector.norm2());
+          if(testAngle1 > testAngle2 || isnan(testAngle2))
+          {
+            mouseAngle = -mouseAngle;
+          }
+          rotationMatrix.loadRotation3(mouseAngle,rotationSpace);
+          rotationMatrix.multiply(*m_currentReference,m_currentReference);
+          rotationMatrix.multiply(*m_referencePoint,m_referencePoint);
+          rotationMatrix.multiply(direction,&direction);
+          clicked = center + direction.normalized() * dirLength;
+          *m_currentReference = m_currentReference->normalized() * currRefLength;
+          *m_referencePoint = m_referencePoint->normalized() * refLength;
+          m_clickedAtom->SetVector(clicked.x(), clicked.y(), clicked.z());
+        }
+      }
     }
     else
     {
@@ -565,17 +675,15 @@ bool BondCentricTool::paint(GLWidget *widget)
       drawAngles(widget, end, m_selectedBond);
 
     // Draw the manipulation rectangle.
-    Eigen::Vector3d *reference = calculateSnapTo(widget, m_selectedBond, m_referencePoint, 20);
-    if (reference)
+    if (m_snapped)
     {
       double rgb[3] = {1.0, 1.0, 0.2};
-      drawManipulationRectangle(widget, m_selectedBond, reference, rgb);
-      delete reference;
+      drawManipulationRectangle(widget, m_selectedBond, m_currentReference, rgb);
     }
     else
     {
       double rgb[3] = {0.0, 0.2, 0.8};
-      drawManipulationRectangle(widget, m_selectedBond, m_referencePoint, rgb);
+      drawManipulationRectangle(widget, m_selectedBond, m_currentReference, rgb);
     }
   }
 
@@ -765,7 +873,7 @@ Eigen::Vector3d* BondCentricTool::calculateSnapTo(GLWidget *widget, Bond *bond, 
         continue;
 
       Eigen::Vector3d orth1 = u.cross(v);
-      Eigen::Vector3d orth2 = referencePoint->cross(v);
+      Eigen::Vector3d orth2 = referencePoint->cross(u);
 
       tAngle = acos(orth1.dot(orth2) / (orth1.norm() * orth2.norm())) * 180.0 / M_PI;
       tAngle = tAngle > 90 ? 180 - tAngle : tAngle;
@@ -805,7 +913,7 @@ Eigen::Vector3d* BondCentricTool::calculateSnapTo(GLWidget *widget, Bond *bond, 
         continue;
 
       Eigen::Vector3d orth1 = u.cross(v);
-      Eigen::Vector3d orth2 = referencePoint->cross(v);
+      Eigen::Vector3d orth2 = referencePoint->cross(u);
 
       tAngle = acos(orth1.dot(orth2) / (orth1.norm() * orth2.norm())) * 180.0 / M_PI;
       tAngle = tAngle > 90 ? 180 - tAngle : tAngle;
@@ -839,9 +947,9 @@ Eigen::Vector3d* BondCentricTool::calculateSnapTo(GLWidget *widget, Bond *bond, 
 
 // ##########  drawManipulationRectangle  ##########
 
-void BondCentricTool::drawManipulationRectangle(GLWidget *widget, Bond *bond, Eigen::Vector3d *&referencePoint, double rgb[3])
+void BondCentricTool::drawManipulationRectangle(GLWidget *widget, Bond *bond, Eigen::Vector3d *referencePoint, double rgb[3])
 {
-  if (!bond || !widget)
+  if (!bond || !widget || !referencePoint)
     return;
 
   Atom *leftAtom = static_cast<Atom*>(bond->GetBeginAtom());
@@ -851,18 +959,6 @@ void BondCentricTool::drawManipulationRectangle(GLWidget *widget, Bond *bond, Ei
   Eigen::Vector3d right = rightAtom->pos();
 
   Eigen::Vector3d leftToRight = right - left;
-
-  if (!referencePoint)
-  {
-    Eigen::Vector3d x = Vector3d(1, 0, 0);
-    Eigen::Vector3d y = Vector3d(0, 1, 0);
-
-    Eigen::Vector3d A = leftToRight.cross(x);
-    Eigen::Vector3d B = leftToRight.cross(y);
-
-    referencePoint = A.norm() >= B.norm() ? new Vector3d(A) : new Vector3d(B);
-    *referencePoint = *referencePoint / referencePoint->norm();
-  }
   
   Eigen::Vector3d vec = leftToRight.cross(*referencePoint);
   Eigen::Vector3d planeVec = vec.cross(leftToRight);

@@ -228,7 +228,7 @@ namespace Avogadro
     Eigen::Vector3d pos;
     gluProject(v.x(), v.y(), v.z(),
                d->modelview.array(), d->projection.array(), viewport, &pos.x(), &pos.y(), &pos.z());
-
+    pos.y() = parent()->height() - pos.y();
     return pos;
   }
 

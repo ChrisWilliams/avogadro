@@ -533,12 +533,12 @@ int TextRenderer::draw( const Eigen::Vector3d &pos, const QString &string )
 
   Eigen::Vector3d wincoords = d->glwidget->camera()->project(pos);
   wincoords.x() -= w/2;
-  wincoords.y() += h/2;
+  wincoords.y() -= h/2;
 
   glPushMatrix();
   glLoadIdentity();
   glTranslatef( static_cast<int>(wincoords.x()),
-                static_cast<int>(wincoords.y()),
+                static_cast<int>(d->glwidget->height() - wincoords.y()),
                 -wincoords.z() );
   d->do_draw(string);
   glPopMatrix();
