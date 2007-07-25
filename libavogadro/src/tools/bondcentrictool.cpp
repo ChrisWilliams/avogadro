@@ -27,6 +27,7 @@
  **********************************************************************/
 
 #include "bondcentrictool.h"
+#include "../skeletontree.h"
 #include <avogadro/primitive.h>
 #include <avogadro/color.h>
 #include <avogadro/glwidget.h>
@@ -450,9 +451,13 @@ QUndoCommand* BondCentricTool::mouseMove(GLWidget *widget, const QMouseEvent *ev
       Vector3d mouseDir = mouseCurr - mouseLast;
 
       Vector3d component = mouseDir.dot(direction) / direction.norm2() * direction;
-      clicked += component;
 
-      m_clickedAtom->SetVector(clicked.x(), clicked.y(), clicked.z());
+      clicked += component;
+      SkeletonTree tree;
+      tree.setRoot(m_clickedAtom);
+      tree.setRootBond(m_selectedBond);
+      tree.populate(m_glwidget->molecule());
+      tree.skeletonTranslate(clicked.x(), clicked.y(), clicked.z());
     }
     else
     {
