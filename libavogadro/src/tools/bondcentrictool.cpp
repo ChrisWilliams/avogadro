@@ -335,6 +335,7 @@ QUndoCommand* BondCentricTool::mousePress(GLWidget *widget, const QMouseEvent *e
         {
           m_snapped = true;
           m_currentReference = reference;
+          *m_currentReference = m_currentReference->normalized();
         }
         else
         {
@@ -427,16 +428,15 @@ QUndoCommand* BondCentricTool::mouseMove(GLWidget *widget, const QMouseEvent *ev
 
       double magnitude = mouseMoved.dot(direction) / direction.norm();
 
-      Matrix3d rotationMatrix;
+      *m_referencePoint = performRotation(magnitude * (M_PI / 180.0),rotationVector,Vector3d(0,0,0),*m_referencePoint);
 
-      rotationMatrix.loadRotation3((magnitude * (M_PI / 180.0)), rotationVector);
-      rotationMatrix.multiply(*m_referencePoint, m_referencePoint);
       Eigen::Vector3d *reference = calculateSnapTo(widget, m_selectedBond, m_referencePoint, 10);
       if (reference)
       {
         m_snapped = true;
         delete m_currentReference;
         m_currentReference = reference;
+        *m_currentReference = m_currentReference->normalized();
       }
       else
       {
@@ -457,21 +457,22 @@ QUndoCommand* BondCentricTool::mouseMove(GLWidget *widget, const QMouseEvent *ev
 
       Vector3d center = otherAtom->pos();
       Vector3d clicked = m_clickedAtom->pos();
-      Vector3d direction = clicked - center;
-      Vector3d rotationSpace = m_currentReference->cross(direction);
-      rotationSpace = rotationSpace.normalized();
+
       Vector3d centerProj = widget->camera()->project(center);
       centerProj -= Vector3d(0,0,centerProj.z());
       Vector3d clickedProj = widget->camera()->project(clicked);
       clickedProj -= Vector3d(0,0,clickedProj.z());
       Vector3d referenceProj = widget->camera()->project(*m_currentReference + center);
       referenceProj -= Vector3d(0,0,referenceProj.z());
+
       Vector3d referenceVector = referenceProj - centerProj;
       referenceVector = referenceVector.normalized();
       Vector3d directionVector = clickedProj - centerProj;
       directionVector = directionVector.normalized();
+
       Vector3d rotationVector = referenceVector.cross(directionVector);
       rotationVector = rotationVector.normalized();
+
       Vector3d currMouseVector = Vector3d(event->pos().x(),event->pos().y(),0) - centerProj;
       if(currMouseVector.norm() > 5)
       {
@@ -480,30 +481,24 @@ QUndoCommand* BondCentricTool::mouseMove(GLWidget *widget, const QMouseEvent *ev
         if(mouseAngle > 0)
         {
           Vector3d tester;
-          Matrix3d rotationMatrix;
-          double dirLength = direction.norm();
-          double currRefLength = m_currentReference->norm();
-          double refLength = m_referencePoint->norm();
 
-          rotationMatrix.loadRotation3(mouseAngle, rotationVector);
-          rotationMatrix.multiply(directionVector, &tester);
+          tester = performRotation(mouseAngle,rotationVector,Vector3d(0,0,0),directionVector);
           double testAngle1 = acos(tester.dot(currMouseVector) / currMouseVector.norm2());
 
-          rotationMatrix.loadRotation3((2*M_PI) - mouseAngle, rotationVector);
-          rotationMatrix.multiply(directionVector, &tester);
+          tester = performRotation(-mouseAngle,rotationVector,Vector3d(0,0,0),directionVector);
           double testAngle2 = acos(tester.dot(currMouseVector) / currMouseVector.norm2());
+
           if(testAngle1 > testAngle2 || isnan(testAngle2))
           {
             mouseAngle = -mouseAngle;
           }
-          rotationMatrix.loadRotation3(mouseAngle,rotationSpace);
-          rotationMatrix.multiply(*m_currentReference,m_currentReference);
-          rotationMatrix.multiply(*m_referencePoint,m_referencePoint);
-          rotationMatrix.multiply(direction,&direction);
-          clicked = center + direction.normalized() * dirLength;
-          *m_currentReference = m_currentReference->normalized() * currRefLength;
-          *m_referencePoint = m_referencePoint->normalized() * refLength;
-          m_clickedAtom->SetVector(clicked.x(), clicked.y(), clicked.z());
+
+          Vector3d direction = clicked - center;
+          Vector3d position = performRotation(mouseAngle,m_currentReference->cross(direction).normalized(),center,clicked);
+          *m_referencePoint = performRotation(mouseAngle,m_currentReference->cross(direction).normalized(),Vector3d(0,0,0),*m_referencePoint);
+          *m_currentReference = performRotation(mouseAngle,m_currentReference->cross(direction).normalized(),Vector3d(0,0,0),*m_currentReference);
+
+          m_clickedAtom->SetVector(position.x(), position.y(), position.z());
         }
       }
     }
@@ -874,11 +869,7 @@ void BondCentricTool::drawAngleSector(GLWidget *widget, Eigen::Vector3d origin,
 
   n = n / n.norm();
 
-  Matrix3d rotationMatrix;
-  rotationMatrix.loadRotation3((uvAngle / 2 * (M_PI / 180.0)), n);
-
-  Vector3d point = Vector3d(0, 0, 0);
-  rotationMatrix.multiply(u, &point);
+  Vector3d point = performRotation((uvAngle / 2 * (M_PI / 180.0)),n,Vector3d(0,0,0),u);
   
   QString angle = QString::number(uvAngle, 10, 1) + QString::fromUtf8("°");
   widget->painter()->drawText(point + origin, angle);
@@ -1063,6 +1054,19 @@ void BondCentricTool::drawSphere(GLWidget *widget,  const Eigen::Vector3d &posit
   widget->painter()->drawSphere(position, radius);
   glDisable(GL_BLEND);
   widget->painter()->end();
+}
+
+Eigen::Vector3d BondCentricTool::performRotation(double angle, Eigen::Vector3d rotationVector, Eigen::Vector3d centerVector, Eigen::Vector3d positionVector)
+{
+  double rotationQw = cos(angle/2.0);
+  Vector3d rotationQv = Vector3d(rotationVector.x()*sin(angle/2.0),rotationVector.y()*sin(angle/2.0),rotationVector.z()*sin(angle/2.0));
+  double directionQw = 0;
+  Vector3d directionQv = positionVector - centerVector;
+  //double finalQw = rotationQw * directionQw - rotationQv.dot(directionQv);
+  Vector3d finalQv = Vector3d(rotationQw*directionQv.x() + rotationQv.x()*directionQw     + rotationQv.y()*directionQv.z() - rotationQv.z()*directionQv.y(),
+                              rotationQw*directionQv.y() - rotationQv.x()*directionQv.z() + rotationQv.y()*directionQw     + rotationQv.z()*directionQv.x(),
+                              rotationQw*directionQv.z() + rotationQv.x()*directionQv.y() - rotationQv.y()*directionQv.x() + rotationQv.z()*directionQw     );
+  return finalQv + centerVector;
 }
 
 SkeletonTranslateCommand::SkeletonTranslateCommand(Molecule *molecule,

@@ -256,6 +256,16 @@ namespace Avogadro {
        * or the program exits etc.
        */
       void clearData();
+      
+      /**
+       * Performs a rotation on a vector.
+       * @param angle The angle to rotate by in radians
+       * @param rotationVector The Vector3d to rotate around, must be a unit vector
+       * @param centerVector The Vector3d postion around which to rotate
+       * @param postionVector The Vector3d postion of the vector to rotate
+       * @return A Vector3d with the final postion after the rotation is performed.
+       */
+      Eigen::Vector3d performRotation(double angle, Eigen::Vector3d rotationVector, Eigen::Vector3d centerVector, Eigen::Vector3d positionVector);
 
     private Q_SLOTS:
       void toolChanged(Tool* tool);
