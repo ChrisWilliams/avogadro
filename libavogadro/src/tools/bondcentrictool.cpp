@@ -670,16 +670,13 @@ bool BondCentricTool::paint(GLWidget *widget)
     Atom *end = static_cast<Atom*>(m_selectedBond->GetEndAtom());
 
     // Draw bond length text.
-    if (!(m_leftButtonPressed && isAtomInBond(m_clickedAtom, m_selectedBond)))
-    {
-      QString length = tr("Bond Length:  ") + 
-                       QString::number(m_selectedBond->GetLength(), 10, 1) +
-                       QString::fromUtf8(" Å (Angstrom)");
+    QString length = tr("Bond Length:  ") + 
+                     QString::number(m_selectedBond->GetLength(), 10, 1) +
+                     QString::fromUtf8(" Å (Angstrom)");
 
-      widget->painter()->begin(widget);
-      widget->painter()->drawText(QPoint(5, widget->height() - 25), length);
-      widget->painter()->end();
-    }
+    widget->painter()->begin(widget);
+    widget->painter()->drawText(QPoint(5, widget->height() - 25), length);
+    widget->painter()->end();
 
     if (m_rightButtonPressed)
     {
@@ -693,6 +690,11 @@ bool BondCentricTool::paint(GLWidget *widget)
 
       if (!m_clickedAtom || m_midButtonPressed || (m_leftButtonPressed && end != m_clickedAtom))
         drawAngles(widget, end, m_selectedBond);
+
+      if (m_clickedAtom && m_leftButtonPressed && isAtomInBond(m_clickedAtom, m_selectedBond))
+      {
+        drawSkeletonAngles(widget, m_skeleton);
+      }
     }
 
     // Draw the manipulation rectangle.
