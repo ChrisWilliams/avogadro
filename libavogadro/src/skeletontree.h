@@ -27,13 +27,43 @@
 #ifndef __SKELETONTREE_H
 #define __SKELETONTREE_H
 
-#include "node.h"
 #include <QObject>
 #include <openbabel/mol.h>
 #include <avogadro/primitive.h>
 
 
 namespace Avogadro {
+
+  class Node : public QObject
+  {
+    protected:
+      Atom* m_atom;
+      QList<Node*> m_nodes;
+      bool m_leaf;
+      //bool m_skeletonVisited;
+      //bool m_nonSkeletonVisited;
+
+    public:
+      //! Constructor
+      Node(Atom *atom);
+      virtual ~Node();
+
+      Atom *atom();
+      QList<Node*> *nodes();
+
+      //bool isSkeletonVisited();
+      //bool isNonSkeletonVisited();
+
+      bool isLeaf();
+      bool containsAtom(Atom* atom);
+
+      void addNode(Node* node);
+      void removeNode(Node* node);
+
+      //void setSkeletonVisit(bool visited);
+      //void setNonSkeletonVisit(bool visited);
+      void setLeaf(bool leaf);
+  };
 
   /**
    * @class SkeletonTree
@@ -56,37 +86,25 @@ namespace Avogadro {
        *
        * @return The root node atom at which the tree is made.
        */
-        Atom *root();
+        Atom *rootAtom();
+
+        Bond *rootBond();
 
       /**
        * Populates the tree from the molecule, using the root node atom.
        *
-       * @param mol The molecule to make the tree.
+       * @param rootAtom The root node atom.
+       * @param rootBond The bond at which the root node atom is.
+       * @param molecule The molecule to make the tree.
        */
-        void populate(Molecule* mol);
-
-      /**
-       * Sets the root node atom.
-       *
-       * @param atom The root node atom.
-       */
-        void setRoot(Atom* atom);
-
-      /**
-       * Sets the bond of the root node atom.
-       *
-       * @param bond The bond at which the root node atom is.
-       */
-        void setRootBond(Bond* bond);
+        void populate(Atom *rootAtom, Bond *rootBond, Molecule* molecule);
 
       /**
        * Translates the atoms attached to root node skeleton, to this location.
        *
-       * NOTE: dx,dy,dz should later be passed as the delta location of root
-       * node.
-       * @param dx The new x position of the root node atom.
-       * @param dy The new y position of the root node atom.
-       * @param dz The new z position of the root node atom.
+       * @param dx The distance the skeleton should move in the x direction.
+       * @param dy The distance the skeleton should move in the y direction.
+       * @param dz The distance the skeleton should move in the z direction.
        */
         void skeletonTranslate(double dx, double dy, double dz);
 
@@ -96,6 +114,8 @@ namespace Avogadro {
        * @param n The node to print.
        */
         void printSkeleton(Node* n);
+
+        bool containsAtom(Atom *atom);
 
       protected:
         Node *m_rootNode; //The root node, tree

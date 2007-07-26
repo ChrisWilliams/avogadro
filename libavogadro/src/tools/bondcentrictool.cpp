@@ -27,7 +27,6 @@
  **********************************************************************/
 
 #include "bondcentrictool.h"
-#include "../skeletontree.h"
 #include <avogadro/primitive.h>
 #include <avogadro/color.h>
 #include <avogadro/glwidget.h>
@@ -51,6 +50,7 @@ BondCentricTool::BondCentricTool(QObject *parent) : Tool(parent),
                                                     m_clickedAtom(NULL),
                                                     m_clickedBond(NULL),
                                                     m_selectedBond(NULL),
+                                                    m_skeleton(NULL),
                                                     m_referencePoint(NULL),
                                                     m_currentReference(NULL),
                                                     m_snapped(false),
@@ -280,6 +280,12 @@ QUndoCommand* BondCentricTool::mousePress(GLWidget *widget, const QMouseEvent *e
   {
     // Atom clicked on.
     m_clickedAtom = (Atom*)clickedPrim;
+
+    if (m_rightButtonPressed && isAtomInBond(m_clickedAtom, m_selectedBond))
+    {
+      m_skeleton = new SkeletonTree();
+      m_skeleton->populate(m_clickedAtom, m_selectedBond, m_glwidget->molecule());
+    }
   }
   else if (clickedPrim && clickedPrim->type() == Primitive::BondType)
   {
@@ -293,11 +299,14 @@ QUndoCommand* BondCentricTool::mousePress(GLWidget *widget, const QMouseEvent *e
     {
       m_selectedBond = m_clickedBond;
 
-      if ((int)m_selectedBond->GetIdx() != oldName) {
+      if ((int)m_selectedBond->GetIdx() != oldName)
+      {
         delete m_referencePoint;
         m_referencePoint = NULL;
+
         delete m_currentReference;
         m_currentReference = NULL;
+
         m_snapped = false;
 
         Atom *leftAtom = static_cast<Atom*>(m_selectedBond->GetBeginAtom());
@@ -305,8 +314,8 @@ QUndoCommand* BondCentricTool::mousePress(GLWidget *widget, const QMouseEvent *e
 
         Vector3d left = leftAtom->pos();
         Vector3d right = rightAtom->pos();
-
         Vector3d leftToRight = right - left;
+
         Vector3d x = Vector3d(1, 0, 0);
         Vector3d y = Vector3d(0, 1, 0);
 
@@ -315,7 +324,9 @@ QUndoCommand* BondCentricTool::mousePress(GLWidget *widget, const QMouseEvent *e
 
         m_referencePoint = A.norm() >= B.norm() ? new Vector3d(A) : new Vector3d(B);
         *m_referencePoint = m_referencePoint->normalized();
+
         Vector3d *reference = calculateSnapTo(widget, m_selectedBond, m_referencePoint, 10);
+
         if (reference)
         {
           m_snapped = true;
@@ -344,6 +355,11 @@ QUndoCommand* BondCentricTool::mouseRelease(GLWidget *widget, const QMouseEvent*
     m_currentReference = NULL;
     m_snapped = false;
     m_selectedBond = NULL;
+  }
+
+  if (m_skeleton) {
+    delete m_skeleton;
+    m_skeleton = NULL;
   }
 
   m_glwidget = widget;
@@ -562,12 +578,8 @@ QUndoCommand* BondCentricTool::mouseMove(GLWidget *widget, const QMouseEvent *ev
 
       Vector3d component = mouseDir.dot(direction) / direction.norm2() * direction;
 
-      clicked += component;
-      SkeletonTree tree;
-      tree.setRoot(m_clickedAtom);
-      tree.setRootBond(m_selectedBond);
-      tree.populate(m_glwidget->molecule());
-      tree.skeletonTranslate(clicked.x(), clicked.y(), clicked.z());
+      if (m_skeleton)
+        m_skeleton->skeletonTranslate(component.x(), component.y(), component.z());
     }
     else
     {
@@ -665,14 +677,19 @@ bool BondCentricTool::paint(GLWidget *widget)
       widget->painter()->end();
     }
 
-    // Draw the angles around the two atoms.
-    if (!m_clickedAtom || m_midButtonPressed || (m_leftButtonPressed && begin != m_clickedAtom)
-         || (m_rightButtonPressed && end != m_clickedAtom/*!isAtomInBond(m_clickedAtom, m_selectedBond)*/))
-      drawAngles(widget, begin, m_selectedBond);
+    if (m_rightButtonPressed)
+    {
+      drawSkeletonAngles(widget, m_skeleton);
+    }
+    else
+    {
+      // Draw the angles around the two atoms.
+      if (!m_clickedAtom || m_midButtonPressed || (m_leftButtonPressed && begin != m_clickedAtom))
+        drawAngles(widget, begin, m_selectedBond);
 
-    if (!m_clickedAtom || m_midButtonPressed || (m_leftButtonPressed && end != m_clickedAtom)
-         || (m_rightButtonPressed && begin != m_clickedAtom/*!isAtomInBond(m_clickedAtom, m_selectedBond)*/))
-      drawAngles(widget, end, m_selectedBond);
+      if (!m_clickedAtom || m_midButtonPressed || (m_leftButtonPressed && end != m_clickedAtom))
+        drawAngles(widget, end, m_selectedBond);
+    }
 
     // Draw the manipulation rectangle.
     if (m_snapped)
@@ -730,11 +747,50 @@ void BondCentricTool::drawAtomAngles(GLWidget *widget, Atom *atom)
   }
 }
 
+// ##########  drawSkeletonAngles  ##########
+
+void BondCentricTool::drawSkeletonAngles(GLWidget *widget, SkeletonTree *skeleton)
+{
+  if (!skeleton || !widget)
+    return;
+
+  Atom *atom = skeleton->rootAtom();
+  Bond *bond = skeleton->rootBond();
+
+  Atom *ref = NULL;
+  if (atom == static_cast<Atom*>(bond->GetBeginAtom()))
+  {
+    ref = static_cast<Atom*>(bond->GetEndAtom());
+  }
+  else if (atom == static_cast<Atom*>(bond->GetEndAtom()))
+  {
+    ref = static_cast<Atom*>(bond->GetBeginAtom());
+  }
+  else
+    return;
+
+  OBBondIterator bondIter = atom->EndBonds();
+  Atom *v = (Atom*)atom->BeginNbrAtom(bondIter);
+
+  if (v != NULL)
+  {
+    do
+    {
+      if (v == ref)
+        continue;
+
+      if (!skeleton->containsAtom(v))
+        drawAngleSector(widget, atom->pos(), ref->pos(), v->pos());
+    }
+    while ((v = (Atom*)atom->NextNbrAtom(bondIter)) != NULL);
+  }
+}
+
 // ##########  drawAngles  ##########
 
 void BondCentricTool::drawAngles(GLWidget *widget, Atom *atom, Bond *bond)
 {
-  if (!atom || !bond)
+  if (!atom || !bond || !widget)
     return;
 
   assert(isAtomInBond(atom, bond));

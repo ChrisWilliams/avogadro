@@ -40,6 +40,8 @@
 #include <QImage>
 #include <QAction>
 
+#include "../skeletontree.h"
+
 namespace Avogadro {
 
   /**
@@ -88,6 +90,8 @@ namespace Avogadro {
       Atom *              m_clickedAtom;
       Bond *              m_clickedBond;
       Bond *              m_selectedBond;
+
+      SkeletonTree *      m_skeleton;
 
       Eigen::Vector3d *   m_referencePoint;
       Eigen::Vector3d *   m_currentReference;
@@ -151,6 +155,16 @@ namespace Avogadro {
        * @pre The given atom must be either the begin or end atom of the given bond.
        */
       void drawAngles(GLWidget *widget, Atom *atom, Bond *bond);
+
+      /**
+       * Draws sectors around the root Atom of a given SkeletonTree based on the root
+       * Bond of the tree and whether or not adjacent Atoms form a part of the skeleton
+       * or not.
+       *
+       * @param widget The widget the angle-sectors will be drawn on.
+       * @param skeleton The SkeletonTree whose root Atom's angles are to be drawn.
+       */
+      void drawSkeletonAngles(GLWidget *widget, SkeletonTree *skeleton);
 
       /**
        * Calculates whether the manipulation plane is close enough to any atoms (that

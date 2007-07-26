@@ -27,8 +27,92 @@
 #include "skeletontree.h"
 
 using namespace std;
+using namespace Avogadro;
 
-namespace Avogadro {
+// ################################## Node #####################################
+
+Node::Node(Atom *atom)
+{
+  m_atom = atom;
+  //m_nodes = new QList<Node>();
+}
+
+Node::~Node() {}
+
+Atom* Node::atom()
+{
+  return m_atom;
+}
+
+QList<Node*> *Node::nodes()
+{
+  return &m_nodes;
+}
+
+/*bool Node::isSkeletonVisited()
+{
+  return m_skeletonVisited;
+}
+
+bool Node::isNonSkeletonVisited()
+{
+  return m_nonSkeletonVisited;
+}*/
+
+bool Node::isLeaf()
+{
+  return m_leaf;
+}
+
+bool Node::containsAtom(Atom* atom)
+{
+  //"atom" exist in the children and grandchildren... of this node.?
+  bool exists = false;
+  if (m_atom == atom) 
+    return true;
+
+  for (int i = 0; i < m_nodes.size(); i++)
+  {
+    Node* n = m_nodes.at(i);
+    if (n->containsAtom(atom))
+    {
+      exists = true;
+      break;
+    }
+  }
+  return exists;
+}
+
+void Node::addNode(Node* node)
+{
+  m_nodes.append(node);
+}
+
+void Node::removeNode(Node* node)
+{
+  int i = m_nodes.indexOf(node);
+  if (i != -1)
+  {
+    m_nodes.removeAt(i);
+  }
+}
+
+/*void Node::setSkeletonVisit(bool visited)
+{
+  m_skeletonVisited = visited;
+}
+
+void Node::setNonSkeletonVisit(bool visited)
+{
+  m_nonSkeletonVisited = visited;
+}*/
+
+void Node::setLeaf(bool leaf)
+{
+  m_leaf = leaf;
+}
+
+// ############################## SkeletonTree #################################
 
 SkeletonTree::SkeletonTree() {}
 
@@ -37,47 +121,45 @@ SkeletonTree::~SkeletonTree()
   delete m_rootNode;
 }
 
-Atom* SkeletonTree::root()
+Atom* SkeletonTree::rootAtom()
 {
   return m_rootNode->atom();
 }
 
-// ##########  setRoot  ##########
-void SkeletonTree:: setRoot(Atom* atom)
+Bond* SkeletonTree::rootBond()
+{
+  return m_rootBond;
+}
+// ##########  populate  ##########
+void SkeletonTree::populate(Atom *rootAtom, Bond *rootBond, Molecule* molecule)
 {
   if (!m_rootNode)
   {
     delete m_rootNode;
   }
-  m_rootNode = new Node();
-  m_rootNode->setAtom(atom);
-}
 
-// ##########  setRootBond  ##########
-void SkeletonTree:: setRootBond(Bond* bond)
-{
-  m_rootBond = bond;
-}
+  m_rootNode = new Node(rootAtom);
 
-// ##########  populate  ##########
-void SkeletonTree::populate(Molecule* mol)
-{
-  m_rootNode -> setNonSkeletonVisit(true);
+  m_rootBond = rootBond;
+
   Atom* bAtom = static_cast<Atom*>(m_rootBond->GetBeginAtom());
   Atom* eAtom = static_cast<Atom*>(m_rootBond->GetEndAtom());
+
+  if (bAtom != m_rootNode->atom() && eAtom != m_rootNode->atom())
+    return;
+
   Atom* diffAtom = (bAtom == m_rootNode->atom()) ? eAtom : bAtom;
 
   //A temproray tree to find loops
-  m_endNode = new Node();
-  m_endNode->setAtom(diffAtom);
+  m_endNode = new Node(diffAtom);
 
   //Recursively go through molecule and make a temproray tree.
   //starting from m_endNode
-  recursivePopulate(mol, m_endNode, m_rootBond);
+  recursivePopulate(molecule, m_endNode, m_rootBond);
 
   //Recursively go through molecule and make the tree.
   //starting from m_rootNode
-  recursivePopulate(mol, m_rootNode, m_rootBond);
+  recursivePopulate(molecule, m_rootNode, m_rootBond);
 
   //delete the temporary tree
   delete m_endNode;
@@ -102,12 +184,10 @@ void SkeletonTree::recursivePopulate(Molecule* mol, Node* node, Bond* bond)
         Atom* diffAtom = (bAtom == atom) ? eAtom : bAtom;
 
         //Check if this atom already exists, so not to form loops
-        if ((!m_endNode->contains(diffAtom)) &&
-           (!m_rootNode->contains(diffAtom)))
+        if ((!m_endNode->containsAtom(diffAtom)) &&
+           (!m_rootNode->containsAtom(diffAtom)))
         {
-          Node* newNode = new Node();
-          newNode -> setAtom(diffAtom);
-          newNode -> setNonSkeletonVisit(true);
+          Node* newNode = new Node(diffAtom);
           node -> addNode(newNode);
           found++;
           recursivePopulate(mol, newNode, b);
@@ -121,12 +201,10 @@ void SkeletonTree::recursivePopulate(Molecule* mol, Node* node, Bond* bond)
 // ##########  skeletonTranslate  ##########
 void SkeletonTree::skeletonTranslate(double dx, double dy, double dz)
 {
-  //Translate skeleton
-  Atom* a = m_rootNode->atom();
-  double dX = dx - a->x();
-  double dY = dy - a->y();
-  double dZ = dz - a->z();
-  recursiveTranslate(m_rootNode, dX, dY, dZ);
+  if (m_rootNode) {
+    //Translate skeleton
+    recursiveTranslate(m_rootNode, dx, dy, dz);
+  }
 }
 
 // ##########  recursiveTranslate  ##########
@@ -157,4 +235,7 @@ void SkeletonTree::printSkeleton(Node* n)
     cout << "-------------" << endl;
 }
 
+bool SkeletonTree::containsAtom(Atom *atom)
+{
+  return m_rootNode ? m_rootNode->containsAtom(atom) : false;
 }
