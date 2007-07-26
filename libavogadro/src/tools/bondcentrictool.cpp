@@ -285,7 +285,7 @@ QUndoCommand* BondCentricTool::mousePress(GLWidget *widget, const QMouseEvent *e
     // Atom clicked on.
     m_clickedAtom = (Atom*)clickedPrim;
 
-    if (m_rightButtonPressed && isAtomInBond(m_clickedAtom, m_selectedBond))
+    if ((m_rightButtonPressed || m_leftButtonPressed) && isAtomInBond(m_clickedAtom, m_selectedBond))
     {
       m_skeleton = new SkeletonTree();
       m_skeleton->populate(m_clickedAtom, m_selectedBond, m_glwidget->molecule());
@@ -494,11 +494,12 @@ QUndoCommand* BondCentricTool::mouseMove(GLWidget *widget, const QMouseEvent *ev
           }
 
           Vector3d direction = clicked - center;
-          Vector3d position = performRotation(mouseAngle,m_currentReference->cross(direction).normalized(),center,clicked);
-          *m_referencePoint = performRotation(mouseAngle,m_currentReference->cross(direction).normalized(),Vector3d(0,0,0),*m_referencePoint);
-          *m_currentReference = performRotation(mouseAngle,m_currentReference->cross(direction).normalized(),Vector3d(0,0,0),*m_currentReference);
-
-          m_clickedAtom->SetVector(position.x(), position.y(), position.z());
+          if (m_skeleton)
+          {
+            m_skeleton->skeletonRotate(mouseAngle,m_currentReference->cross(direction).normalized(),center);
+            *m_referencePoint = performRotation(mouseAngle,m_currentReference->cross(direction).normalized(),Vector3d(0,0,0),*m_referencePoint);
+            *m_currentReference = performRotation(mouseAngle,m_currentReference->cross(direction).normalized(),Vector3d(0,0,0),*m_currentReference);
+          }
         }
       }
     }

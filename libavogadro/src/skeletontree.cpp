@@ -28,6 +28,7 @@
 
 using namespace std;
 using namespace Avogadro;
+using namespace Eigen;
 
 // ################################## Node #####################################
 
@@ -207,6 +208,15 @@ void SkeletonTree::skeletonTranslate(double dx, double dy, double dz)
   }
 }
 
+// ##########  skeletonRotate  ##########
+void SkeletonTree::skeletonRotate(double angle, Eigen::Vector3d rotationVector, Eigen::Vector3d centerVector)
+{
+  if (m_rootNode) {
+    //Rotate skeleton
+    recursiveRotate(m_rootNode, angle, rotationVector, centerVector);
+  }
+}
+
 // ##########  recursiveTranslate  ##########
 void SkeletonTree::recursiveTranslate(Node* n, double x, double y, double z)
 {
@@ -214,10 +224,24 @@ void SkeletonTree::recursiveTranslate(Node* n, double x, double y, double z)
   Atom* a = n->atom();
   a->SetVector(a->x() + x, a->y() + y, a->z() + z);
   for (int i = 0; i < listNodes->size(); i++)
-    {
-      Node* node = listNodes->at(i);
-      recursiveTranslate(node, x, y, z);
-    }
+  {
+    Node* node = listNodes->at(i);
+    recursiveTranslate(node, x, y, z);
+  }
+}
+
+// ##########  recursiveRotate  ##########
+void SkeletonTree::recursiveRotate(Node* n, double angle, Eigen::Vector3d rotationVector, Eigen::Vector3d centerVector)
+{
+  QList<Node*>* listNodes = n->nodes();
+  Atom* a = n->atom();
+  Vector3d final = performRotation(angle, rotationVector, centerVector, a->pos());
+  a->SetVector(final.x(), final.y(), final.z());
+  for (int i = 0; i < listNodes->size(); i++)
+  {
+    Node* node = listNodes->at(i);
+    recursiveRotate(node, angle, rotationVector, centerVector);
+  }
 }
 
 // ##########  printSkeleton  ##########
@@ -225,10 +249,10 @@ void SkeletonTree::printSkeleton(Node* n)
 {
   QList<Node*>* listNodes = n->nodes();
   for (int i = 0; i < listNodes->size(); i++)
-    {
-      Node* n = listNodes->at(i);
-      printSkeleton(n);
-    }
+  {
+    Node* n = listNodes->at(i);
+    printSkeleton(n);
+  }
   Atom* a = n->atom();
   cout << a->x() << "," << a->y()<< ","<<a->z() << endl;
   if (!n->isLeaf())
@@ -238,4 +262,17 @@ void SkeletonTree::printSkeleton(Node* n)
 bool SkeletonTree::containsAtom(Atom *atom)
 {
   return m_rootNode ? m_rootNode->containsAtom(atom) : false;
+}
+
+Eigen::Vector3d SkeletonTree::performRotation(double angle, Eigen::Vector3d rotationVector, Eigen::Vector3d centerVector, Eigen::Vector3d positionVector)
+{
+  double rotationQw = cos(angle/2.0);
+  Vector3d rotationQv = Vector3d(rotationVector.x()*sin(angle/2.0),rotationVector.y()*sin(angle/2.0),rotationVector.z()*sin(angle/2.0));
+  double directionQw = 0;
+  Vector3d directionQv = positionVector - centerVector;
+  //double finalQw = rotationQw * directionQw - rotationQv.dot(directionQv);
+  Vector3d finalQv = Vector3d(rotationQw*directionQv.x() + rotationQv.x()*directionQw     + rotationQv.y()*directionQv.z() - rotationQv.z()*directionQv.y(),
+                              rotationQw*directionQv.y() - rotationQv.x()*directionQv.z() + rotationQv.y()*directionQw     + rotationQv.z()*directionQv.x(),
+                              rotationQw*directionQv.z() + rotationQv.x()*directionQv.y() - rotationQv.y()*directionQv.x() + rotationQv.z()*directionQw     );
+  return finalQv + centerVector;
 }

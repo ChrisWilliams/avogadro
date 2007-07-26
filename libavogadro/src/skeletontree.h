@@ -107,7 +107,16 @@ namespace Avogadro {
        * @param dz The distance the skeleton should move in the z direction.
        */
         void skeletonTranslate(double dx, double dy, double dz);
-
+      
+      /**
+       * Rotates the atoms attached to root node skeleton, by the given angle.
+       *
+       * @param angle The angle the skeleton rotate in radians.
+       * @param rotationVector The Vector3d the skeleton should rotate around.
+       * @param centerVector The Vector3d of the center of rotation for the skeleton.
+       */
+        void skeletonRotate(double angle, Eigen::Vector3d rotationVector, Eigen::Vector3d centerVector);
+      
       /**
        * Recusively prints the children of this node and child nodes.
        *
@@ -125,6 +134,16 @@ namespace Avogadro {
       private:
         void recursivePopulate(Molecule* mol, Node* node, Bond* bond);
         void recursiveTranslate(Node* n, double x, double y, double z);
+        void recursiveRotate(Node* n, double angle, Eigen::Vector3d rotationVector, Eigen::Vector3d centerVector);
+        /**
+       * Performs a rotation on a vector.
+       * @param angle The angle to rotate by in radians
+       * @param rotationVector The Vector3d to rotate around, must be a unit vector
+       * @param centerVector The Vector3d postion around which to rotate
+       * @param postionVector The Vector3d postion of the vector to rotate
+       * @return A Vector3d with the final postion after the rotation is performed.
+       */
+      Eigen::Vector3d performRotation(double angle, Eigen::Vector3d rotationVector, Eigen::Vector3d centerVector, Eigen::Vector3d positionVector);
   };
 }
 #endif
