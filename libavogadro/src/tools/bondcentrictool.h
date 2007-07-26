@@ -39,6 +39,7 @@
 #include <QStringList>
 #include <QImage>
 #include <QAction>
+#include <QUndoCommand>
 
 #include "../skeletontree.h"
 
@@ -97,6 +98,8 @@ namespace Avogadro {
       Eigen::Vector3d *   m_currentReference;
       bool                m_snapped;
       ToolGroup *         m_toolGroup;
+
+      QUndoCommand *      m_undo; // The current undo command
 
       bool                m_leftButtonPressed;  // rotation
       bool                m_midButtonPressed;   // scale / zoom
@@ -259,6 +262,27 @@ namespace Avogadro {
       void moleculeChanged(Molecule* previous, Molecule* next);
       void primitiveRemoved(Primitive* primitive);
 
+  };
+
+  class SkeletonTranslateCommand : public QUndoCommand
+  {
+    public:
+      SkeletonTranslateCommand(Molecule *molecule, QUndoCommand *parent =
+0);
+      SkeletonTranslateCommand(Molecule *molecule, Atom *atom, Eigen::Vector3d
+pos, QUndoCommand *parent = 0);
+
+      void redo();
+      void undo();
+      bool mergeWith ( const QUndoCommand * command );
+      int id() const;
+
+    private:
+      Molecule m_moleculeCopy;
+      Molecule *m_molecule;
+      int m_atomIndex;
+      Eigen::Vector3d m_pos;
+      bool undone;
   };
 
   class BondCentricToolFactory : public QObject, public ToolFactory

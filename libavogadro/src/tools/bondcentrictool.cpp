@@ -249,6 +249,8 @@ QUndoCommand* BondCentricTool::mousePress(GLWidget *widget, const QMouseEvent *e
     connectToolGroup(widget, m_toolGroup);
   }
 
+  m_undo = 0;
+
   m_lastDraggingPosition = event->pos();
   m_movedSinceButtonPressed = false;
 
@@ -278,6 +280,8 @@ QUndoCommand* BondCentricTool::mousePress(GLWidget *widget, const QMouseEvent *e
 
   if (clickedPrim && clickedPrim->type() == Primitive::AtomType)
   {
+    //Create an undo instance for this manipulation
+    m_undo = new SkeletonTranslateCommand(m_glwidget->molecule());
     // Atom clicked on.
     m_clickedAtom = (Atom*)clickedPrim;
 
@@ -355,7 +359,11 @@ QUndoCommand* BondCentricTool::mouseRelease(GLWidget *widget, const QMouseEvent*
     m_currentReference = NULL;
     m_snapped = false;
     m_selectedBond = NULL;
-  }
+  } else 
+      if (!m_clickedAtom && m_clickedBond && !m_movedSinceButtonPressed) 
+      {
+         m_undo = 0;
+      }
 
   if (m_skeleton) {
     delete m_skeleton;
@@ -370,7 +378,7 @@ QUndoCommand* BondCentricTool::mouseRelease(GLWidget *widget, const QMouseEvent*
   m_clickedBond = NULL;
 
   m_glwidget->update();
-  return 0;
+  return m_undo;
 }
 
 // ##########  mouseMove  ##########
@@ -1055,6 +1063,71 @@ void BondCentricTool::drawSphere(GLWidget *widget,  const Eigen::Vector3d &posit
   widget->painter()->drawSphere(position, radius);
   glDisable(GL_BLEND);
   widget->painter()->end();
+}
+
+SkeletonTranslateCommand::SkeletonTranslateCommand(Molecule *molecule,
+QUndoCommand *parent) : QUndoCommand(parent), m_molecule(0)
+{
+  // Store the molecule - this call won't actually move an atom
+  setText(QObject::tr("Bond Centric Manipulation"));
+  m_moleculeCopy = *molecule;
+  m_molecule = molecule;
+  m_atomIndex = 0;
+  undone = false;
+}
+
+SkeletonTranslateCommand::SkeletonTranslateCommand(Molecule *molecule, Atom
+*atom, Eigen::Vector3d pos, QUndoCommand *parent) : QUndoCommand(parent),
+m_molecule(0)
+{
+  // Store the original molecule before any modifications are made
+  setText(QObject::tr("Bond Centric Manipulation"));
+  m_moleculeCopy = *molecule;
+  m_molecule = molecule;
+  m_atomIndex = atom->GetIdx();
+  m_pos = pos;
+  undone = false;
+}
+
+void SkeletonTranslateCommand::redo()
+{
+  // Move the specified atom to the location given
+  if (undone)
+  {
+    Molecule newMolecule = *m_molecule;
+    *m_molecule = m_moleculeCopy;
+    m_moleculeCopy = newMolecule;
+  }
+  else if (m_atomIndex)
+  {
+    m_molecule->BeginModify();
+    Atom *atom = static_cast<Atom *>(m_molecule->GetAtom(m_atomIndex));
+    atom->setPos(m_pos);
+    m_molecule->EndModify();
+    atom->update();
+  }
+  QUndoCommand::redo();
+}
+
+void SkeletonTranslateCommand::undo()
+{
+  // Restore our original molecule
+  Molecule newMolecule = *m_molecule;
+  *m_molecule = m_moleculeCopy;
+  m_moleculeCopy = newMolecule;
+  undone = true;
+}
+
+bool SkeletonTranslateCommand::mergeWith (const QUndoCommand *)
+{
+  // Just return true to repeated calls - we have stored the original molecule
+  return false;
+}
+
+int SkeletonTranslateCommand::id() const
+{
+  //changed from 26011980[manipulatetool]
+  return 26011981;
 }
 
 #include "bondcentrictool.moc"
