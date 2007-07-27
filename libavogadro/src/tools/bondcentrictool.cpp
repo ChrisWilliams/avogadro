@@ -1061,14 +1061,23 @@ void BondCentricTool::drawSphere(GLWidget *widget,  const Eigen::Vector3d &posit
 
 Eigen::Vector3d BondCentricTool::performRotation(double angle, Eigen::Vector3d rotationVector, Eigen::Vector3d centerVector, Eigen::Vector3d positionVector)
 {
-  double rotationQw = cos(angle/2.0);
-  Vector3d rotationQv = Vector3d(rotationVector.x()*sin(angle/2.0),rotationVector.y()*sin(angle/2.0),rotationVector.z()*sin(angle/2.0));
+  double angleHalf = angle/2.0;
+  double rotationQw = cos(angleHalf);
+  double sinAngle = sin(angleHalf);
+  Vector3d rotationQv = Vector3d(rotationVector.x()*angleHalf,rotationVector.y()*angleHalf,rotationVector.z()*angleHalf);
   double directionQw = 0;
   Vector3d directionQv = positionVector - centerVector;
-  //double finalQw = rotationQw * directionQw - rotationQv.dot(directionQv);
-  Vector3d finalQv = Vector3d(rotationQw*directionQv.x() + rotationQv.x()*directionQw     + rotationQv.y()*directionQv.z() - rotationQv.z()*directionQv.y(),
+  double tempQw = rotationQw * directionQw - rotationQv.dot(directionQv);
+  Vector3d tempQv = Vector3d(rotationQw*directionQv.x() + rotationQv.x()*directionQw     + rotationQv.y()*directionQv.z() - rotationQv.z()*directionQv.y(),
                               rotationQw*directionQv.y() - rotationQv.x()*directionQv.z() + rotationQv.y()*directionQw     + rotationQv.z()*directionQv.x(),
                               rotationQw*directionQv.z() + rotationQv.x()*directionQv.y() - rotationQv.y()*directionQv.x() + rotationQv.z()*directionQw     );
+  double rotationQnorm2 = (rotationQw*rotationQw+rotationQv.norm2());
+  double rotationQwINV = rotationQw / rotationQnorm2;
+  Vector3d rotationQvINV = - rotationQv / rotationQnorm2;
+  //double finalQw = tempQw * rotationQwINV - tempQv.dot(rotationQvINV);
+  Vector3d finalQv = Vector3d(tempQw*rotationQvINV.x() + tempQv.x()*rotationQwINV     + tempQv.y()*rotationQvINV.z() - tempQv.z()*rotationQvINV.y(),
+                              tempQw*rotationQvINV.y() - tempQv.x()*rotationQvINV.z() + tempQv.y()*rotationQwINV     + tempQv.z()*rotationQvINV.x(),
+                              tempQw*rotationQvINV.z() + tempQv.x()*rotationQvINV.y() - tempQv.y()*rotationQvINV.x() + tempQv.z()*rotationQwINV     );
   return finalQv + centerVector;
 }
 
