@@ -47,6 +47,7 @@ using namespace Eigen;
 // ##########  Constructor  ##########
 
 BondCentricTool::BondCentricTool(QObject *parent) : Tool(parent),
+                                                    m_settingsWidget(NULL),
                                                     m_clickedAtom(NULL),
                                                     m_clickedBond(NULL),
                                                     m_selectedBond(NULL),
@@ -58,7 +59,10 @@ BondCentricTool::BondCentricTool(QObject *parent) : Tool(parent),
                                                     m_leftButtonPressed(false),
                                                     m_midButtonPressed(false),
                                                     m_rightButtonPressed(false),
-                                                    m_movedSinceButtonPressed(false)
+                                                    m_movedSinceButtonPressed(false),
+                                                    m_showAngles(true),
+                                                    m_snapToEnabled(true),
+                                                    m_snapToAngle(10)
 {
   QAction *action = activateAction();
   action->setIcon(QIcon(QString::fromUtf8(":/bondcentric/bondcentric.png")));
@@ -77,6 +81,9 @@ BondCentricTool::~BondCentricTool()
   m_referencePoint = NULL;
   delete m_currentReference;
   m_currentReference = NULL;
+
+  if (m_settingsWidget)
+    m_settingsWidget->deleteLater();
 }
 
 // ##########  clearData  ##########
@@ -189,7 +196,7 @@ Primitive *BondCentricTool::computeClick(GLWidget *widget, const QPoint& p)
 
 // ##########  zoom  ##########
 
-void BondCentricTool::zoom( const Eigen::Vector3d &goal, double delta ) const
+void BondCentricTool::zoom(const Eigen::Vector3d &goal, double delta) const
 {
   Vector3d transformedGoal = m_glwidget->camera()->modelview() * goal;
   double distanceToGoal = transformedGoal.norm();
@@ -207,7 +214,7 @@ void BondCentricTool::zoom( const Eigen::Vector3d &goal, double delta ) const
 
 // ##########  translate  ##########
 
-void BondCentricTool::translate( const Eigen::Vector3d &what, const QPoint &from, const QPoint &to ) const
+void BondCentricTool::translate(const Eigen::Vector3d &what, const QPoint &from, const QPoint &to) const
 {
   Vector3d fromPos = m_glwidget->camera()->unProject(from, what);
   Vector3d toPos = m_glwidget->camera()->unProject(to, what);
@@ -216,7 +223,7 @@ void BondCentricTool::translate( const Eigen::Vector3d &what, const QPoint &from
 
 // ##########  rotate  ##########
 
-void BondCentricTool::rotate( const Eigen::Vector3d &center, double deltaX, double deltaY ) const
+void BondCentricTool::rotate(const Eigen::Vector3d &center, double deltaX, double deltaY) const
 {
   Vector3d xAxis = m_glwidget->camera()->backtransformedXAxis();
   Vector3d yAxis = m_glwidget->camera()->backtransformedYAxis();
@@ -228,7 +235,7 @@ void BondCentricTool::rotate( const Eigen::Vector3d &center, double deltaX, doub
 
 // ##########  tilt  ##########
 
-void BondCentricTool::tilt( const Eigen::Vector3d &center, double delta ) const
+void BondCentricTool::tilt(const Eigen::Vector3d &center, double delta) const
 {
   Vector3d zAxis = m_glwidget->camera()->backtransformedZAxis();
   m_glwidget->camera()->translate(center);
@@ -329,9 +336,9 @@ QUndoCommand* BondCentricTool::mousePress(GLWidget *widget, const QMouseEvent *e
         m_referencePoint = A.norm() >= B.norm() ? new Vector3d(A) : new Vector3d(B);
         *m_referencePoint = m_referencePoint->normalized();
 
-        Vector3d *reference = calculateSnapTo(widget, m_selectedBond, m_referencePoint, 10);
+        Vector3d *reference = calculateSnapTo(widget, m_selectedBond, m_referencePoint, m_snapToAngle);
 
-        if (reference)
+        if (reference && m_snapToEnabled)
         {
           m_snapped = true;
           m_currentReference = reference;
@@ -430,8 +437,8 @@ QUndoCommand* BondCentricTool::mouseMove(GLWidget *widget, const QMouseEvent *ev
 
       *m_referencePoint = performRotation(magnitude * (M_PI / 180.0),rotationVector,Vector3d(0,0,0),*m_referencePoint);
 
-      Eigen::Vector3d *reference = calculateSnapTo(widget, m_selectedBond, m_referencePoint, 10);
-      if (reference)
+      Eigen::Vector3d *reference = calculateSnapTo(widget, m_selectedBond, m_referencePoint, m_snapToAngle);
+      if (reference && m_snapToEnabled)
       {
         m_snapped = true;
         delete m_currentReference;
@@ -659,7 +666,7 @@ bool BondCentricTool::paint(GLWidget *widget)
   }
 
   if (m_leftButtonPressed && m_clickedAtom && (!m_selectedBond ||
-      !isAtomInBond(m_clickedAtom, m_selectedBond)))
+      !isAtomInBond(m_clickedAtom, m_selectedBond)) && m_showAngles)
   {
     drawAtomAngles(widget, m_clickedAtom);
   }
@@ -678,11 +685,11 @@ bool BondCentricTool::paint(GLWidget *widget)
     widget->painter()->drawText(QPoint(5, widget->height() - 25), length);
     widget->painter()->end();
 
-    if (m_rightButtonPressed)
+    if (m_rightButtonPressed && m_showAngles)
     {
       drawSkeletonAngles(widget, m_skeleton);
     }
-    else
+    else if (m_showAngles)
     {
       // Draw the angles around the two atoms.
       if (!m_clickedAtom || m_midButtonPressed || (m_leftButtonPressed && begin != m_clickedAtom))
@@ -698,7 +705,7 @@ bool BondCentricTool::paint(GLWidget *widget)
     }
 
     // Draw the manipulation rectangle.
-    if (m_snapped)
+    if (m_snapped && m_snapToEnabled)
     {
       double rgb[3] = {1.0, 1.0, 0.2};
       drawManipulationRectangle(widget, m_selectedBond, m_currentReference, rgb);
@@ -873,7 +880,7 @@ void BondCentricTool::drawAngleSector(GLWidget *widget, Eigen::Vector3d origin,
   n = n / n.norm();
 
   Vector3d point = performRotation((uvAngle / 2 * (M_PI / 180.0)),n,Vector3d(0,0,0),u);
-  
+
   QString angle = QString::number(uvAngle, 10, 1) + QString::fromUtf8("°");
   widget->painter()->drawText(point + origin, angle);
   widget->painter()->end();
@@ -950,10 +957,10 @@ Eigen::Vector3d* BondCentricTool::calculateSnapTo(GLWidget *widget, Bond *bond, 
     }
     while ((t = (Atom*)b->NextNbrAtom(bondIter)) != NULL);
   }
-  
+
   bondIter = e->EndBonds();
   t = (Atom*)e->BeginNbrAtom(bondIter);
-  
+
   if (t != NULL)
   {
     do
@@ -999,7 +1006,7 @@ Eigen::Vector3d* BondCentricTool::calculateSnapTo(GLWidget *widget, Bond *bond, 
     }
     return NULL;
   }
-  
+
   return smallestRef;
 }
 
@@ -1017,7 +1024,7 @@ void BondCentricTool::drawManipulationRectangle(GLWidget *widget, Bond *bond, Ei
   Eigen::Vector3d right = rightAtom->pos();
 
   Eigen::Vector3d leftToRight = right - left;
-  
+
   Eigen::Vector3d vec = leftToRight.cross(*referencePoint);
   Eigen::Vector3d planeVec = vec.cross(leftToRight);
 
@@ -1059,6 +1066,8 @@ void BondCentricTool::drawSphere(GLWidget *widget,  const Eigen::Vector3d &posit
   widget->painter()->end();
 }
 
+// ##########  performRotation  ##########
+
 Eigen::Vector3d BondCentricTool::performRotation(double angle, Eigen::Vector3d rotationVector, Eigen::Vector3d centerVector, Eigen::Vector3d positionVector)
 {
   double angleHalf = angle/2.0;
@@ -1080,6 +1089,73 @@ Eigen::Vector3d BondCentricTool::performRotation(double angle, Eigen::Vector3d r
                               tempQw*rotationQvINV.z() + tempQv.x()*rotationQvINV.y() - tempQv.y()*rotationQvINV.x() + tempQv.z()*rotationQwINV     );
   return finalQv + centerVector;
 }
+
+// ##########  showAnglesChanged  ##########
+
+void BondCentricTool::showAnglesChanged(int state)
+{
+  m_showAngles = state == Qt::Checked ? true : false;
+}
+
+// ##########  snapToCheckBoxChanged  ##########
+
+void BondCentricTool::snapToCheckBoxChanged(int state)
+{
+  m_snapToEnabled = state == Qt::Checked ? true : false;
+}
+
+// ##########  snapToAngleChanged  ##########
+
+void BondCentricTool::snapToAngleChanged(int newAngle)
+{
+  m_snapToAngle = newAngle;
+}
+
+// ##########  settingsWidget  ##########
+
+QWidget *BondCentricTool::settingsWidget()
+{
+  if (!m_settingsWidget)
+  {
+    m_settingsWidget = new QWidget;
+
+    m_showAnglesBox = new QCheckBox(" Show Angles", m_settingsWidget);
+    m_showAnglesBox->setCheckState(m_showAngles ? Qt::Checked : Qt::Unchecked);
+
+    m_snapToCheckBox = new QCheckBox(" Enable Snap-to", m_settingsWidget);
+    m_snapToCheckBox->setCheckState(m_snapToEnabled ? Qt::Checked : Qt::Unchecked);
+
+    m_snapToAngleLabel = new QLabel("Snap-to Angle: ");
+
+    m_snapToAngleBox = new QSpinBox(m_settingsWidget);
+    m_snapToAngleBox->setRange(0, 90);
+    m_snapToAngleBox->setSingleStep(1);
+    m_snapToAngleBox->setValue(m_snapToAngle);
+    m_snapToAngleBox->setSuffix(QString::fromUtf8("°"));
+
+    m_layout = new QGridLayout();
+    m_layout->setSpacing(2);
+    m_layout->addWidget(m_showAnglesBox);
+    m_layout->addWidget(m_snapToCheckBox);
+    m_layout->addWidget(m_snapToAngleLabel);
+    m_layout->addWidget(m_snapToAngleBox);
+
+    connect(m_showAnglesBox, SIGNAL(stateChanged(int)), this,
+            SLOT(showAnglesChanged(int)));
+
+    connect(m_snapToCheckBox, SIGNAL(stateChanged(int)), this,
+            SLOT(snapToCheckBoxChanged(int)));
+
+    connect(m_snapToAngleBox, SIGNAL(valueChanged(int)), this,
+            SLOT(snapToAngleChanged(int)));
+
+    m_settingsWidget->setLayout(m_layout);
+  }
+
+  return m_settingsWidget;
+}
+
+// #########################  SkeletonTranslateCommand  ########################
 
 SkeletonTranslateCommand::SkeletonTranslateCommand(Molecule *molecule,
 QUndoCommand *parent) : QUndoCommand(parent), m_molecule(0)

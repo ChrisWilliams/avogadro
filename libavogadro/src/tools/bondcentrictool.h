@@ -41,6 +41,11 @@
 #include <QAction>
 #include <QUndoCommand>
 
+#include <QLabel>
+#include <QSpinBox>
+#include <QCheckBox>
+#include <QGridLayout>
+
 #include "../skeletontree.h"
 
 namespace Avogadro {
@@ -85,8 +90,41 @@ namespace Avogadro {
 
       virtual bool paint(GLWidget *widget);
 
+      virtual QWidget *settingsWidget();
+
+    public Q_SLOTS:
+      /**
+       * Sets the snap-to angle to a given angle in degrees.
+       *
+       * @param newAngle The new value for the snap-to angle.
+       */
+      void snapToAngleChanged(int newAngle);
+
+      /**
+       * Sets whether or not snap-to is enabled.
+       *
+       * @param state The state of the check box relating to whether or not
+       *              snap-to is enabled.
+       *
+       *              Qt:Checked - enable snap-to.
+       *              Qt:Unchecked - disable snap-to.
+       */
+      void snapToCheckBoxChanged(int state);
+
+      /**
+       * Sets whether or not to show angles.
+       *
+       * @param state The state of the check box relating to whether or not
+       *              to show angles.
+       *
+       *              Qt:Checked - show angles.
+       *              Qt:Unchecked - don't show angles.
+       */
+      void showAnglesChanged(int state);
+
     protected:
       GLWidget *          m_glwidget;
+      QWidget *           m_settingsWidget;
 
       Atom *              m_clickedAtom;
       Bond *              m_clickedBond;
@@ -106,7 +144,18 @@ namespace Avogadro {
       bool                m_rightButtonPressed; // translation
       bool                m_movedSinceButtonPressed;
 
+      bool                m_showAngles;
+      bool                m_snapToEnabled;
+
+      int                 m_snapToAngle; // In degrees
+
       QPoint              m_lastDraggingPosition;
+
+      QLabel *            m_snapToAngleLabel;
+      QCheckBox *         m_showAnglesBox;
+      QCheckBox *         m_snapToCheckBox;
+      QSpinBox *          m_snapToAngleBox;
+      QGridLayout *       m_layout;
 
       //! \name Construction Plane/Angles Methods
       //@{
@@ -217,7 +266,7 @@ namespace Avogadro {
        * @param radius The radius of the sphere.
        * @param alpha The alpha value that determines the opacity of the sphere.
        */
-      void drawSphere(GLWidget *widget, const Eigen::Vector3d &center, double radius, 
+      void drawSphere(GLWidget *widget, const Eigen::Vector3d &center, double radius,
                       float alpha);
       //@}
 
@@ -235,10 +284,42 @@ namespace Avogadro {
        */
       Primitive *computeClick(GLWidget *widget, const QPoint& p);
 
-      void zoom( const Eigen::Vector3d &goal, double delta ) const;
-      void translate( const Eigen::Vector3d &what, const QPoint &from, const QPoint &to ) const;
-      void rotate( const Eigen::Vector3d &center, double deltaX, double deltaY ) const;
-      void tilt( const Eigen::Vector3d &center, double delta ) const;
+      /**
+       * Zooms the camera towards a given point by a given amount.
+       *
+       * @param goal The vector the camera will zoom towards.
+       * @param delta The amount to zoom.
+       */
+      void zoom(const Eigen::Vector3d &goal, double delta) const;
+
+      /**
+       * Translates the camera in relation to a given Vector3d based on movement
+       * in the mouse coordinate space between two given points.
+       *
+       * @param what What the camera is translating in relation to.
+       * @param from The point the mouse moved from.
+       * @param to The point the mouse moved to.
+       */
+      void translate(const Eigen::Vector3d &what, const QPoint &from, const QPoint &to) const;
+
+      /**
+       * Rotates the camera by given amounts around the X and Y axes that run through
+       * a given vector (the center of the rotation).
+       *
+       * @param center The vector the camera will rotate around.
+       * @param deltaX The amount to rotate in the X direction (about the Y axis).
+       * @param deltaY The amount to rotate in the Y direction (about the X axis).
+       */
+      void rotate(const Eigen::Vector3d &center, double deltaX, double deltaY) const;
+
+      /**
+       * Tilts the camera by a given amount around the Z axis running through a
+       * given vector (the center of the tilt).
+       *
+       * @param center The vector the camera will tilt around.
+       * @param delta The amount the camera will tilt about the Z axis.
+       */
+      void tilt(const Eigen::Vector3d &center, double delta) const;
 
       /**
        * Connects this tool to the widget's ToolGroup so as to detect the signal
@@ -256,14 +337,18 @@ namespace Avogadro {
        * or the program exits etc.
        */
       void clearData();
-      
+
       /**
        * Performs a rotation on a vector.
-       * @param angle The angle to rotate by in radians
-       * @param rotationVector The Vector3d to rotate around, must be a unit vector
-       * @param centerVector The Vector3d postion around which to rotate
-       * @param postionVector The Vector3d postion of the vector to rotate
+       *
+       * @param angle The angle to rotate by in radians.
+       * @param rotationVector The Vector3d to rotate around, must be a unit vector.
+       * @param centerVector The Vector3d postion around which to rotate.
+       * @param postionVector The Vector3d postion of the vector to rotate.
+       *
        * @return A Vector3d with the final postion after the rotation is performed.
+       *
+       * @pre rotationVector must be a unit vector (of length 1).
        */
       Eigen::Vector3d performRotation(double angle, Eigen::Vector3d rotationVector, Eigen::Vector3d centerVector, Eigen::Vector3d positionVector);
 
@@ -271,6 +356,7 @@ namespace Avogadro {
       void toolChanged(Tool* tool);
       void moleculeChanged(Molecule* previous, Molecule* next);
       void primitiveRemoved(Primitive* primitive);
+      void settingsWidgetDestroyed();
 
   };
 
@@ -306,4 +392,4 @@ pos, QUndoCommand *parent = 0);
 
 } // end namespace Avogadro
 
-#endif
+#endif /*__BONDCENTRICTOOL_H*/
