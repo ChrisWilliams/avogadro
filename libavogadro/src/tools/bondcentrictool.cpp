@@ -1095,6 +1095,9 @@ Eigen::Vector3d BondCentricTool::performRotation(double angle, Eigen::Vector3d r
 void BondCentricTool::showAnglesChanged(int state)
 {
   m_showAngles = state == Qt::Checked ? true : false;
+
+  if (m_glwidget)
+    m_glwidget->update();
 }
 
 // ##########  snapToCheckBoxChanged  ##########
@@ -1102,6 +1105,10 @@ void BondCentricTool::showAnglesChanged(int state)
 void BondCentricTool::snapToCheckBoxChanged(int state)
 {
   m_snapToEnabled = state == Qt::Checked ? true : false;
+  m_snapToAngleBox->setEnabled(m_snapToEnabled);
+
+  if (m_glwidget)
+    m_glwidget->update();
 }
 
 // ##########  snapToAngleChanged  ##########
@@ -1119,26 +1126,34 @@ QWidget *BondCentricTool::settingsWidget()
   {
     m_settingsWidget = new QWidget;
 
-    m_showAnglesBox = new QCheckBox(" Show Angles", m_settingsWidget);
+    m_showAnglesBox = new QCheckBox(tr(" Show Angles"), m_settingsWidget);
     m_showAnglesBox->setCheckState(m_showAngles ? Qt::Checked : Qt::Unchecked);
 
-    m_snapToCheckBox = new QCheckBox(" Enable Snap-to", m_settingsWidget);
+    m_snapToCheckBox = new QCheckBox(tr(" Enable Snap-to"), m_settingsWidget);
     m_snapToCheckBox->setCheckState(m_snapToEnabled ? Qt::Checked : Qt::Unchecked);
 
-    m_snapToAngleLabel = new QLabel("Snap-to Angle: ");
+    m_snapToAngleLabel = new QLabel(tr("Snap-to Angle: "));
+    m_snapToAngleLabel->setScaledContents(false);
+    m_snapToAngleLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    m_snapToAngleLabel->setMaximumHeight(20);
 
     m_snapToAngleBox = new QSpinBox(m_settingsWidget);
     m_snapToAngleBox->setRange(0, 90);
     m_snapToAngleBox->setSingleStep(1);
     m_snapToAngleBox->setValue(m_snapToAngle);
     m_snapToAngleBox->setSuffix(QString::fromUtf8("°"));
+    m_snapToAngleBox->setEnabled(m_snapToEnabled);
 
     m_layout = new QGridLayout();
     m_layout->setSpacing(2);
-    m_layout->addWidget(m_showAnglesBox);
-    m_layout->addWidget(m_snapToCheckBox);
-    m_layout->addWidget(m_snapToAngleLabel);
-    m_layout->addWidget(m_snapToAngleBox);
+    m_layout->addWidget(m_showAnglesBox, 1, 0);
+    m_layout->setRowMinimumHeight(2, 10);
+    m_layout->addWidget(m_snapToCheckBox, 3, 0);
+    m_layout->setRowMinimumHeight(4, 10);
+    m_layout->addWidget(m_snapToAngleLabel, 5, 0);
+    m_layout->addWidget(m_snapToAngleBox, 6, 0);
+    m_layout->addWidget(new QLabel(tr("")), 7, 0);
+    m_layout->setRowStretch(7, 1);
 
     connect(m_showAnglesBox, SIGNAL(stateChanged(int)), this,
             SLOT(showAnglesChanged(int)));
