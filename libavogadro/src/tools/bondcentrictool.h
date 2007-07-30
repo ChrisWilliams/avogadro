@@ -361,12 +361,12 @@ namespace Avogadro {
 
   };
 
-  class SkeletonTranslateCommand : public QUndoCommand
+  class BondCentricMoveCommand : public QUndoCommand
   {
     public:
-      SkeletonTranslateCommand(Molecule *molecule, QUndoCommand *parent =
+      BondCentricMoveCommand(Molecule *molecule, QUndoCommand *parent =
 0);
-      SkeletonTranslateCommand(Molecule *molecule, Atom *atom, Eigen::Vector3d
+      BondCentricMoveCommand(Molecule *molecule, Atom *atom, Eigen::Vector3d
 pos, QUndoCommand *parent = 0);
 
       void redo();

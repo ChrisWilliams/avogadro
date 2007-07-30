@@ -295,7 +295,7 @@ QUndoCommand* BondCentricTool::mousePress(GLWidget *widget, const QMouseEvent *e
   if (clickedPrim && clickedPrim->type() == Primitive::AtomType)
   {
     //Create an undo instance for this manipulation
-    m_undo = new SkeletonTranslateCommand(m_glwidget->molecule());
+    m_undo = new BondCentricMoveCommand(m_glwidget->molecule());
     // Atom clicked on.
     m_clickedAtom = (Atom*)clickedPrim;
 
@@ -1235,7 +1235,7 @@ void BondCentricTool::settingsWidgetDestroyed() {
 
 // #########################  SkeletonTranslateCommand  ########################
 
-SkeletonTranslateCommand::SkeletonTranslateCommand(Molecule *molecule,
+BondCentricMoveCommand::BondCentricMoveCommand(Molecule *molecule,
 QUndoCommand *parent) : QUndoCommand(parent), m_molecule(0)
 {
   // Store the molecule - this call won't actually move an atom
@@ -1246,7 +1246,7 @@ QUndoCommand *parent) : QUndoCommand(parent), m_molecule(0)
   undone = false;
 }
 
-SkeletonTranslateCommand::SkeletonTranslateCommand(Molecule *molecule, Atom
+BondCentricMoveCommand::BondCentricMoveCommand(Molecule *molecule, Atom
 *atom, Eigen::Vector3d pos, QUndoCommand *parent) : QUndoCommand(parent),
 m_molecule(0)
 {
@@ -1259,7 +1259,7 @@ m_molecule(0)
   undone = false;
 }
 
-void SkeletonTranslateCommand::redo()
+void BondCentricMoveCommand::redo()
 {
   // Move the specified atom to the location given
   if (undone)
@@ -1279,7 +1279,7 @@ void SkeletonTranslateCommand::redo()
   QUndoCommand::redo();
 }
 
-void SkeletonTranslateCommand::undo()
+void BondCentricMoveCommand::undo()
 {
   // Restore our original molecule
   Molecule newMolecule = *m_molecule;
@@ -1288,13 +1288,12 @@ void SkeletonTranslateCommand::undo()
   undone = true;
 }
 
-bool SkeletonTranslateCommand::mergeWith (const QUndoCommand *)
+bool BondCentricMoveCommand::mergeWith (const QUndoCommand *)
 {
-  // Just return true to repeated calls - we have stored the original molecule
   return false;
 }
 
-int SkeletonTranslateCommand::id() const
+int BondCentricMoveCommand::id() const
 {
   //changed from 26011980[manipulatetool]
   return 26011981;
