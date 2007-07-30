@@ -49,150 +49,343 @@
 
 namespace Avogadro {
 
+  /*
+   * @class Quaternion
+   * @brief <TODO>
+   * @author Shahzad Ali, Ross Braithwaite, James Bunt
+   *
+   * <TODO>
+   */
   class Quaternion
   {
-
     protected:
-
       double m_W;
       Eigen::Vector3d m_V;
 
     public:
       //! Constructor
+      /*
+       * <TODO>
+       *
+       * @param w <TODO>
+       * @param x <TODO>
+       * @param y <TODO>
+       * @param z <TODO>
+       */
       Quaternion(double w, double x, double y, double z);
+
+      //! Constructor
+      /*
+       * <TODO>
+       *
+       * @param w <TODO>
+       * @param v <TODO>
+       */
       Quaternion(double w, Eigen::Vector3d v);
 
+      /*
+       * <TODO>
+       *
+       * @param right <TODO>
+       *
+       * @return <TODO>
+       */
       Quaternion multiply(Quaternion right);
-      Eigen::Vector3d Quaternion::multiplyToVector(Quaternion right);
+
+      /*
+       * <TODO>
+       *
+       * @param right <TODO>
+       *
+       * @return <TODO>
+       */
+      Eigen::Vector3d multiplyToVector(Quaternion right);
+
+      /*
+       * <TODO>
+       *
+       * @return <TODO>
+       */
       Quaternion multiplicitiveInverse();
 
+      /*
+       * <TODO>
+       *
+       * @return <TODO>
+       */
       double w();
+
+      /*
+       * <TODO>
+       *
+       * @return <TODO>
+       */
       double x();
+
+      /*
+       * <TODO>
+       *
+       * @return <TODO>
+       */
       double y();
+
+      /*
+       * <TODO>
+       *
+       * @return <TODO>
+       */
       double z();
+
+      /*
+       * <TODO>
+       *
+       * @return <TODO>
+       */
       Eigen::Vector3d v();
 
+      /*
+       * <TODO>
+       *
+       * @return <TODO>
+       */
       double norm();
+
+      /*
+       * <TODO>
+       *
+       * @return <TODO>
+       */
       double norm2();
 
+      /*
+       * <TODO>
+       *
+       * @param theta <TODO>
+       * @param rotationVector <TODO>
+       *
+       * @return <TODO>
+       */
       static Quaternion createRotationLeftHalf(double theta, Eigen::Vector3d rotationVector);
-      static Eigen::Vector3d performRotationMultiplication(Quaternion rotationLeft, Eigen::Vector3d direction, Quaternion rotationRight);
+
+      /*
+       * <TODO>
+       *
+       * @param rotationLeft <TODO>
+       * @param direction <TODO>
+       * @param rotationRight <TODO>
+       *
+       * @return <TODO>
+       */
+      static Eigen::Vector3d performRotationMultiplication(Quaternion rotationLeft,
+          Eigen::Vector3d direction, Quaternion rotationRight);
   };
 
+  /**
+   * @class Node
+   * @brief A node of a tree used to represent a molecule in a skeletal-like structure.
+   * @author Shahzad Ali, Ross Braithwaite, James Bunt
+   *
+   * This class represents the a node in a particular tree structure.  It holds
+   * an Atom and pointers to any number of child nodes.
+   */
   class Node : public QObject
   {
     protected:
       Atom* m_atom;
       QList<Node*> m_nodes;
-      bool m_leaf;
-      //bool m_skeletonVisited;
-      //bool m_nonSkeletonVisited;
+      //bool m_leaf;
 
     public:
       //! Constructor
+      /**
+       * Constructs a new Node.
+       *
+       * @param atom The Atom contained within this new Node.
+       */
       Node(Atom *atom);
+
+      //! Deconstructor
       virtual ~Node();
 
+      /**
+       * Retrieves a pointer to the Atom stored in this Node.
+       *
+       * @return A pointer to the Atom stored in this Node.
+       */
       Atom *atom();
+
+      /**
+       * Gets all of this Node's children.
+       *
+       * @return A QList of pointers to all the children Nodes of this Node.
+       */
       QList<Node*> *nodes();
 
-      //bool isSkeletonVisited();
-      //bool isNonSkeletonVisited();
-
+      /**
+       * Determines whether or not this Node is a leaf in the SkeletonTree.
+       *
+       * @return True if this Node is a leaf in the tree, false otherwise.
+       */
       bool isLeaf();
+
+      /**
+       * Determines whether or not this Node, or any of the Nodes in the (sub)tree
+       * that this Node is the root of, contains the given Atom.
+       *
+       * @param atom The Atom being searched for in this Node's (sub)tree.
+       *
+       * @return True if the Atom was found in the (sub)tree, false otherwise.
+       */
       bool containsAtom(Atom* atom);
 
+      /**
+       * Adds the given Node as a child of this Node.
+       *
+       * @param node The Node being made a child of this Node.
+       */
       void addNode(Node* node);
+
+      /**
+       * Removes the given Node from this Node's children.
+       *
+       * @param node The Node being removed from this Node's children.
+       */
       void removeNode(Node* node);
 
-      //void setSkeletonVisit(bool visited);
-      //void setNonSkeletonVisit(bool visited);
-      void setLeaf(bool leaf);
+      /*
+       * Sets whether or not this Node is a leaf-node in the SkeletonTree (i.e.
+       * whether or not this Node has any children.)
+       *
+       * @param leaf Whether or not this Node is a leaf-node.
+       *
+      void setLeaf(bool leaf);*/
   };
 
   /**
    * @class SkeletonTree
-   * @brief Skeletal Manipulations on a Molecule
+   * @brief Skeletal representation and manipulation of a Molecule.
    * @author Shahzad Ali, Ross Braithwaite, James Bunt
    *
-   * This class creates and provides methods to manipulate molecule using
-   * skeletons.
+   * This class creates and provides methods to manipulate a Molecule using
+   * skeletal math.
    */
   class SkeletonTree : public QObject
   {
-      public:
-        //! Constructor
-        SkeletonTree();
-        //! Deconstructor
-        virtual ~SkeletonTree();
+    public:
+      //! Constructor
+       SkeletonTree();
+      //! Deconstructor
+      virtual ~SkeletonTree();
 
       /**
-       * Returns the root node atom.
+       * Returns the root node Atom.
        *
-       * @return The root node atom at which the tree is made.
+       * @return The root node Atom at which the tree is made.
        */
-        Atom *rootAtom();
-
-        Bond *rootBond();
+      Atom *rootAtom();
 
       /**
-       * Populates the tree from the molecule, using the root node atom.
+       * Returns the Bond associated with the root Atom.
        *
-       * @param rootAtom The root node atom.
-       * @param rootBond The bond at which the root node atom is.
-       * @param molecule The molecule to make the tree.
+       * @return The Bond associated with the root Atom.
        */
-        void populate(Atom *rootAtom, Bond *rootBond, Molecule* molecule);
+      Bond *rootBond();
 
       /**
-       * Translates the atoms attached to root node skeleton, to this location.
+       * Populates the tree from the Molecule, using the root node Atom.
+       *
+       * @param rootAtom The root node Atom.
+       * @param rootBond The Bond at which the root node Atom is.
+       * @param molecule The Molecule to make the tree.
+       */
+      void populate(Atom *rootAtom, Bond *rootBond, Molecule* molecule);
+
+      /**
+       * Translates the Atoms attached to root node skeleton by the given amount
+       * in the 3 standard directions (x, y, and z).
        *
        * @param dx The distance the skeleton should move in the x direction.
        * @param dy The distance the skeleton should move in the y direction.
        * @param dz The distance the skeleton should move in the z direction.
        */
-        void skeletonTranslate(double dx, double dy, double dz);
-      
+      void skeletonTranslate(double dx, double dy, double dz);
+
       /**
-       * Rotates the atoms attached to root node skeleton, by the given angle.
+       * Rotates the Atoms attached to root node skeleton, by the given angle.
        *
        * @param angle The angle the skeleton rotate in radians.
        * @param rotationVector The Vector3d the skeleton should rotate around.
        * @param centerVector The Vector3d of the center of rotation for the
-skeleton.
+       *                     skeleton.
        */
-        void skeletonRotate(double angle, Eigen::Vector3d rotationVector,
-Eigen::Vector3d centerVector);
-      
+      void skeletonRotate(double angle, Eigen::Vector3d rotationVector,
+                            Eigen::Vector3d centerVector);
+
       /**
-       * Recusively prints the children of this node and child nodes.
+       * Recusively prints the children of this Node and child Nodes.
        *
-       * @param n The node to print.
+       * @param n The root Node of the tree to print.
        */
-        void printSkeleton(Node* n);
+      void printSkeleton(Node* n);
 
-        bool containsAtom(Atom *atom);
+      /**
+       * Determines whether or not this SkeletonTree contains a Node with the
+       * given Atom.
+       *
+       * @param atom The Atom being searched for in this SkeletonTree.
+       *
+       * @return True if the Atom was found in the tree, false otherwise.
+       */
+      bool containsAtom(Atom *atom);
 
-      protected:
-        Node *m_rootNode; //The root node, tree
-        Bond *m_rootBond; //The bond at which root node atom is attached
-        Node *m_endNode;  //A temporary tree.
+    protected:
+      Node *m_rootNode; //The root node, tree
+      Bond *m_rootBond; //The bond at which root node atom is attached
+      Node *m_endNode;  //A temporary tree.
 
-      private:
-        void recursivePopulate(Molecule* mol, Node* node, Bond* bond);
-        void recursiveTranslate(Node* n, double x, double y, double z);
-        void recursiveRotate(Node* n, Quaternion left, Quaternion right, Eigen::Vector3d centerVector);
-        /**
+    private:
+      /*
+       * <TODO>
+       *
+       * @param mol <TODO>
+       * @param node <TODO>
+       * @param bond <TODO>
+       */
+      void recursivePopulate(Molecule* mol, Node* node, Bond* bond);
+
+      /*
+       * <TODO>
+       *
+       * @param n <TODO>
+       * @param x <TODO>
+       * @param y <TODO>
+       * @param z <TODO>
+       */
+      void recursiveTranslate(Node* n, double x, double y, double z);
+
+      /*
+       * <TODO>
+       *
+       * @param n <TODO>
+       * @param left <TODO>
+       * @param right <TODO>
+       * @param centerVector <TODO>
+       */
+      void recursiveRotate(Node* n, Quaternion left, Quaternion right, Eigen::Vector3d centerVector);
+
+      /* <TODO>
        * Performs a rotation on a vector.
-       * @param angle The angle to rotate by in radians
+       * @param angle The angle to rotate by in radians.
        * @param rotationVector The Vector3d to rotate around, must be a unit
-vector
+       *                       vector.
        * @param centerVector The Vector3d postion around which to rotate
        * @param postionVector The Vector3d postion of the vector to rotate
        * @return A Vector3d with the final postion after the rotation is
-performed.
+       *         performed.
        */
-      Eigen::Vector3d performRotation(Quaternion left, Quaternion right, Eigen::Vector3d centerVector, Eigen::Vector3d positionVector);
+      Eigen::Vector3d performRotation(Quaternion left, Quaternion right,
+                                      Eigen::Vector3d centerVector,
+                                      Eigen::Vector3d positionVector);
   };
 
 
@@ -497,27 +690,99 @@ performed.
        *
        * @pre rotationVector must be a unit vector (of length 1).
        */
-      Eigen::Vector3d performRotation(double angle, Eigen::Vector3d rotationVector, Eigen::Vector3d centerVector, Eigen::Vector3d positionVector);
+      Eigen::Vector3d performRotation(double angle, Eigen::Vector3d rotationVector,
+                                      Eigen::Vector3d centerVector,
+                                      Eigen::Vector3d positionVector);
 
     private Q_SLOTS:
+      /*
+       * <TODO>
+       *
+       * @param tool <TODO>
+       */
       void toolChanged(Tool* tool);
+
+      /*
+       * <TODO>
+       *
+       * @param previous <TODO>
+       * @param next <TODO>
+       */
       void moleculeChanged(Molecule* previous, Molecule* next);
+
+      /*
+       * <TODO>
+       *
+       * @param primitive <TODO>
+       */
       void primitiveRemoved(Primitive* primitive);
+
+      /*
+       * <TODO>
+       */
       void settingsWidgetDestroyed();
 
   };
 
+  /**
+   * @class BondCentricMoveCommand
+   * @brief An implementation of QUndoCommand used to undo bond centric manipulations.
+   * @author Shahzad Ali, Ross Braithwaite, James Bunt
+   *
+   * This class is an implementation of QUndoCommand that can be used to allow
+   * the two types of bond-centric manipulation to be undone.  These two types
+   * of manipulation are:
+   *  - Adjusting bond length.
+   *  - Adjusting bond angles.
+   */
   class BondCentricMoveCommand : public QUndoCommand
   {
     public:
-      BondCentricMoveCommand(Molecule *molecule, QUndoCommand *parent =
-0);
-      BondCentricMoveCommand(Molecule *molecule, Atom *atom, Eigen::Vector3d
-pos, QUndoCommand *parent = 0);
+      //!Constructor
+      /*
+       * <TODO>
+       *
+       * @param molecule <TODO>
+       * @param parent <TODO>
+       */
+      BondCentricMoveCommand(Molecule *molecule, QUndoCommand *parent = 0);
 
+      //!Constructor
+      /*
+       * <TODO>
+       *
+       * @param molecule <TODO>
+       * @param atom <TODO>
+       * @param pos <TODO>
+       * @param parent <TODO>
+       */
+      BondCentricMoveCommand(Molecule *molecule, Atom *atom,
+                             Eigen::Vector3d pos, QUndoCommand *parent = 0);
+
+      /*
+       * <TODO>
+       */
       void redo();
+
+      /*
+       * <TODO>
+       */
       void undo();
-      bool mergeWith ( const QUndoCommand * command );
+
+      /*
+       * <TODO>
+       *
+       * @param command <TODO>
+       *
+       * @return <TODO>
+       */
+      bool mergeWith(const QUndoCommand * command);
+
+      /*
+       * <TODO>
+       *
+       * @return <TODO>
+       */
       int id() const;
 
     private:
@@ -530,13 +795,13 @@ pos, QUndoCommand *parent = 0);
 
 
   class BondCentricToolFactory : public QObject, public ToolFactory
-    {
-      Q_OBJECT
-      Q_INTERFACES(Avogadro::ToolFactory)
+  {
+    Q_OBJECT
+    Q_INTERFACES(Avogadro::ToolFactory)
 
-      public:
-        Tool *createInstance(QObject *parent = 0) { return new BondCentricTool(parent); }
-    };
+    public:
+      Tool *createInstance(QObject *parent = 0) { return new BondCentricTool(parent); }
+  };
 
 } // end namespace Avogadro
 
