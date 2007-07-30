@@ -1091,24 +1091,9 @@ void BondCentricTool::drawSphere(GLWidget *widget,  const Eigen::Vector3d &posit
 
 Eigen::Vector3d BondCentricTool::performRotation(double angle, Eigen::Vector3d rotationVector, Eigen::Vector3d centerVector, Eigen::Vector3d positionVector)
 {
-  double angleHalf = angle/2.0;
-  double rotationQw = cos(angleHalf);
-  double sinAngle = sin(angleHalf);
-  Vector3d rotationQv = Vector3d(rotationVector.x() * sinAngle, rotationVector.y() * sinAngle, rotationVector.z() * sinAngle);
-  double directionQw = 0;
-  Vector3d directionQv = positionVector - centerVector;
-  double tempQw = rotationQw * directionQw - rotationQv.dot(directionQv);
-  Vector3d tempQv = Vector3d(rotationQw*directionQv.x() + rotationQv.x() * directionQw     + rotationQv.y()*directionQv.z() - rotationQv.z()*directionQv.y(),
-                              rotationQw*directionQv.y() - rotationQv.x()*directionQv.z() + rotationQv.y()*directionQw     + rotationQv.z()*directionQv.x(),
-                              rotationQw*directionQv.z() + rotationQv.x()*directionQv.y() - rotationQv.y()*directionQv.x() + rotationQv.z()*directionQw     );
-  double rotationQnorm2 = (rotationQw*rotationQw+rotationQv.norm2());
-  double rotationQwINV = rotationQw / rotationQnorm2;
-  Vector3d rotationQvINV = - rotationQv / rotationQnorm2;
-  //double finalQw = tempQw * rotationQwINV - tempQv.dot(rotationQvINV);
-  Vector3d finalQv = Vector3d(tempQw*rotationQvINV.x() + tempQv.x()*rotationQwINV     + tempQv.y()*rotationQvINV.z() - tempQv.z()*rotationQvINV.y(),
-                              tempQw*rotationQvINV.y() - tempQv.x()*rotationQvINV.z() + tempQv.y()*rotationQwINV     + tempQv.z()*rotationQvINV.x(),
-                              tempQw*rotationQvINV.z() + tempQv.x()*rotationQvINV.y() - tempQv.y()*rotationQvINV.x() + tempQv.z()*rotationQwINV     );
-  return finalQv + centerVector;
+  Quaternion qLeft = Quaternion::createRotationLeftHalf(angle, rotationVector);
+  Quaternion qRight = qLeft.multiplicitiveInverse();
+  return Quaternion::performRotationMultiplication(qLeft, positionVector - centerVector, qRight) + centerVector;
 }
 
 // ##########  showAnglesChanged  ##########
@@ -1299,6 +1284,88 @@ int BondCentricMoveCommand::id() const
   return 26011981;
 }
 
+// ################################## Quaternion #####################################
+
+Quaternion::Quaternion(double w, double x, double y, double z)
+{
+  m_W = w;
+  m_V = Vector3d(x,y,z);
+}
+
+Quaternion::Quaternion(double w, Vector3d v)
+{
+  m_W = w;
+  m_V = v;
+}
+
+double Quaternion::w()
+{
+  return m_W;
+}
+
+double Quaternion::x()
+{
+  return m_V.x();
+}
+
+double Quaternion::y()
+{
+  return m_V.y();
+}
+
+double Quaternion::z()
+{
+  return m_V.z();
+}
+
+Vector3d Quaternion::v()
+{
+  return m_V;
+}
+
+double Quaternion::norm()
+{
+  return sqrt(norm2());
+}
+
+double Quaternion::norm2()
+{
+  return w() * w() + v().norm2();
+}
+
+Quaternion Quaternion::multiply(Quaternion right)
+{
+  return Quaternion(w() * right.w() - v().dot(right.v()), 
+                    w() * right.x() + x() * right.w() + y() * right.z() - z() * right.y(),
+                    w() * right.y() - x() * right.z() + y() * right.w() + z() * right.x(),
+                    w() * right.z() + x() * right.y() - y() * right.x() + z() * right.w());
+}
+
+Vector3d Quaternion::multiplyToVector(Quaternion right)
+{
+  return Vector3d(w() * right.x() + x() * right.w() + y() * right.z() - z() * right.y(),
+                  w() * right.y() - x() * right.z() + y() * right.w() + z() * right.x(),
+                  w() * right.z() + x() * right.y() - y() * right.x() + z() * right.w());
+}
+
+Quaternion Quaternion::multiplicitiveInverse()
+{
+  double divisor = norm2();
+  return Quaternion(w() / divisor, - v() / divisor);
+}
+
+Quaternion Quaternion::createRotationLeftHalf(double theta, Vector3d rotationVector)
+{
+  double angleHalf = theta/2.0;
+  double sinAngle = sin(angleHalf);
+  return Quaternion(cos(angleHalf), rotationVector.x() * sinAngle, rotationVector.y() * sinAngle, rotationVector.z() * sinAngle);
+}
+
+Vector3d Quaternion::performRotationMultiplication(Quaternion left, Vector3d direction, Quaternion right)
+{
+  return left.multiply(Quaternion(0,direction)).multiplyToVector(right);
+}
+
 // ################################## Node #####################################
 
 Node::Node(Atom *atom)
@@ -1483,7 +1550,9 @@ Eigen::Vector3d centerVector)
 {
   if (m_rootNode) {
     //Rotate skeleton
-    recursiveRotate(m_rootNode, angle, rotationVector, centerVector);
+    Quaternion qLeft = Quaternion::createRotationLeftHalf(angle, rotationVector);
+    Quaternion qRight = qLeft.multiplicitiveInverse();
+    recursiveRotate(m_rootNode, qLeft, qRight, centerVector);
   }
 }
 
@@ -1501,18 +1570,16 @@ void SkeletonTree::recursiveTranslate(Node* n, double x, double y, double z)
 }
 
 // ##########  recursiveRotate  ##########
-void SkeletonTree::recursiveRotate(Node* n, double angle, Eigen::Vector3d
-rotationVector, Eigen::Vector3d centerVector)
+void SkeletonTree::recursiveRotate(Node* n, Quaternion left, Quaternion right, Eigen::Vector3d centerVector)
 {
   QList<Node*>* listNodes = n->nodes();
   Atom* a = n->atom();
-  Vector3d final = performRotation(angle, rotationVector, centerVector,
-a->pos());
+  Vector3d final = performRotation(left, right, centerVector, a->pos());
   a->SetVector(final.x(), final.y(), final.z());
   for (int i = 0; i < listNodes->size(); i++)
   {
     Node* node = listNodes->at(i);
-    recursiveRotate(node, angle, rotationVector, centerVector);
+    recursiveRotate(node, left, right, centerVector);
   }
 }
 
@@ -1536,43 +1603,10 @@ bool SkeletonTree::containsAtom(Atom *atom)
   return m_rootNode ? m_rootNode->containsAtom(atom) : false;
 }
 
-Eigen::Vector3d SkeletonTree::performRotation(double angle, Eigen::Vector3d
-rotationVector, Eigen::Vector3d centerVector, Eigen::Vector3d positionVector)
+Eigen::Vector3d SkeletonTree::performRotation(Quaternion left, Quaternion right, Eigen::Vector3d centerVector, Eigen::Vector3d positionVector)
 {
-  double angleHalf = angle/2.0;
-  double rotationQw = cos(angleHalf);
-  double sinAngle = sin(angleHalf);
-  Vector3d rotationQv =
-Vector3d(rotationVector.x()*angleHalf,rotationVector.y()*angleHalf,
-rotationVector.z()*angleHalf);
-  double directionQw = 0;
-  Vector3d directionQv = positionVector - centerVector;
-  double tempQw = rotationQw * directionQw - rotationQv.dot(directionQv);
-  Vector3d tempQv = Vector3d(rotationQw*directionQv.x() +
-rotationQv.x()*directionQw     + rotationQv.y()*directionQv.z() -
-rotationQv.z()*directionQv.y(),
-                              rotationQw*directionQv.y() -
-rotationQv.x()*directionQv.z() + rotationQv.y()*directionQw     +
-rotationQv.z()*directionQv.x(),
-                              rotationQw*directionQv.z() +
-rotationQv.x()*directionQv.y() - rotationQv.y()*directionQv.x() +
-rotationQv.z()*directionQw     );
-  double rotationQnorm2 = (rotationQw*rotationQw+rotationQv.norm2());
-  double rotationQwINV = rotationQw / rotationQnorm2;
-  Vector3d rotationQvINV = - rotationQv / rotationQnorm2;
-  //double finalQw = tempQw * rotationQwINV - tempQv.dot(rotationQvINV);
-  Vector3d finalQv = Vector3d(tempQw*rotationQvINV.x() +
-tempQv.x()*rotationQwINV     + tempQv.y()*rotationQvINV.z() -
-tempQv.z()*rotationQvINV.y(),
-                              tempQw*rotationQvINV.y() -
-tempQv.x()*rotationQvINV.z() + tempQv.y()*rotationQwINV     +
-tempQv.z()*rotationQvINV.x(),
-                              tempQw*rotationQvINV.z() +
-tempQv.x()*rotationQvINV.y() - tempQv.y()*rotationQvINV.x() +
-tempQv.z()*rotationQwINV     );
-  return finalQv + centerVector;
+    return Quaternion::performRotationMultiplication(left, positionVector - centerVector, right) + centerVector;
 }
-
 
 #include "bondcentrictool.moc"
 

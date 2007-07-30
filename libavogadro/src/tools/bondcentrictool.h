@@ -49,6 +49,36 @@
 
 namespace Avogadro {
 
+  class Quaternion
+  {
+
+    protected:
+
+      double m_W;
+      Eigen::Vector3d m_V;
+
+    public:
+      //! Constructor
+      Quaternion(double w, double x, double y, double z);
+      Quaternion(double w, Eigen::Vector3d v);
+
+      Quaternion multiply(Quaternion right);
+      Eigen::Vector3d Quaternion::multiplyToVector(Quaternion right);
+      Quaternion multiplicitiveInverse();
+
+      double w();
+      double x();
+      double y();
+      double z();
+      Eigen::Vector3d v();
+
+      double norm();
+      double norm2();
+
+      static Quaternion createRotationLeftHalf(double theta, Eigen::Vector3d rotationVector);
+      static Eigen::Vector3d performRotationMultiplication(Quaternion rotationLeft, Eigen::Vector3d direction, Quaternion rotationRight);
+  };
+
   class Node : public QObject
   {
     protected:
@@ -151,8 +181,7 @@ Eigen::Vector3d centerVector);
       private:
         void recursivePopulate(Molecule* mol, Node* node, Bond* bond);
         void recursiveTranslate(Node* n, double x, double y, double z);
-        void recursiveRotate(Node* n, double angle, Eigen::Vector3d
-rotationVector, Eigen::Vector3d centerVector);
+        void recursiveRotate(Node* n, Quaternion left, Quaternion right, Eigen::Vector3d centerVector);
         /**
        * Performs a rotation on a vector.
        * @param angle The angle to rotate by in radians
@@ -163,8 +192,7 @@ vector
        * @return A Vector3d with the final postion after the rotation is
 performed.
        */
-      Eigen::Vector3d performRotation(double angle, Eigen::Vector3d
-rotationVector, Eigen::Vector3d centerVector, Eigen::Vector3d positionVector);
+      Eigen::Vector3d performRotation(Quaternion left, Quaternion right, Eigen::Vector3d centerVector, Eigen::Vector3d positionVector);
   };
 
 
