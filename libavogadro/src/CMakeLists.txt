@@ -32,7 +32,6 @@ set(libavogadro_SRCS
   textrenderer.cpp
   sphere.cpp
   cylinder.cpp
-  skeletontree.cpp
 )
 
 set(libavogadro_HDRS
@@ -48,7 +47,6 @@ set(libavogadro_HDRS
   painter.h
   toolgroup.h
   undosequence.h
-  skeletontree.h
 )
 
 qt4_automoc(${libavogadro_SRCS})

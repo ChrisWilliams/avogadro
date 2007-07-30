@@ -46,9 +46,127 @@
 #include <QCheckBox>
 #include <QGridLayout>
 
-#include "../skeletontree.h"
 
 namespace Avogadro {
+
+  class Node : public QObject
+  {
+    protected:
+      Atom* m_atom;
+      QList<Node*> m_nodes;
+      bool m_leaf;
+      //bool m_skeletonVisited;
+      //bool m_nonSkeletonVisited;
+
+    public:
+      //! Constructor
+      Node(Atom *atom);
+      virtual ~Node();
+
+      Atom *atom();
+      QList<Node*> *nodes();
+
+      //bool isSkeletonVisited();
+      //bool isNonSkeletonVisited();
+
+      bool isLeaf();
+      bool containsAtom(Atom* atom);
+
+      void addNode(Node* node);
+      void removeNode(Node* node);
+
+      //void setSkeletonVisit(bool visited);
+      //void setNonSkeletonVisit(bool visited);
+      void setLeaf(bool leaf);
+  };
+
+  /**
+   * @class SkeletonTree
+   * @brief Skeletal Manipulations on a Molecule
+   * @author Shahzad Ali, Ross Braithwaite, James Bunt
+   *
+   * This class creates and provides methods to manipulate molecule using
+   * skeletons.
+   */
+  class SkeletonTree : public QObject
+  {
+      public:
+        //! Constructor
+        SkeletonTree();
+        //! Deconstructor
+        virtual ~SkeletonTree();
+
+      /**
+       * Returns the root node atom.
+       *
+       * @return The root node atom at which the tree is made.
+       */
+        Atom *rootAtom();
+
+        Bond *rootBond();
+
+      /**
+       * Populates the tree from the molecule, using the root node atom.
+       *
+       * @param rootAtom The root node atom.
+       * @param rootBond The bond at which the root node atom is.
+       * @param molecule The molecule to make the tree.
+       */
+        void populate(Atom *rootAtom, Bond *rootBond, Molecule* molecule);
+
+      /**
+       * Translates the atoms attached to root node skeleton, to this location.
+       *
+       * @param dx The distance the skeleton should move in the x direction.
+       * @param dy The distance the skeleton should move in the y direction.
+       * @param dz The distance the skeleton should move in the z direction.
+       */
+        void skeletonTranslate(double dx, double dy, double dz);
+      
+      /**
+       * Rotates the atoms attached to root node skeleton, by the given angle.
+       *
+       * @param angle The angle the skeleton rotate in radians.
+       * @param rotationVector The Vector3d the skeleton should rotate around.
+       * @param centerVector The Vector3d of the center of rotation for the
+skeleton.
+       */
+        void skeletonRotate(double angle, Eigen::Vector3d rotationVector,
+Eigen::Vector3d centerVector);
+      
+      /**
+       * Recusively prints the children of this node and child nodes.
+       *
+       * @param n The node to print.
+       */
+        void printSkeleton(Node* n);
+
+        bool containsAtom(Atom *atom);
+
+      protected:
+        Node *m_rootNode; //The root node, tree
+        Bond *m_rootBond; //The bond at which root node atom is attached
+        Node *m_endNode;  //A temporary tree.
+
+      private:
+        void recursivePopulate(Molecule* mol, Node* node, Bond* bond);
+        void recursiveTranslate(Node* n, double x, double y, double z);
+        void recursiveRotate(Node* n, double angle, Eigen::Vector3d
+rotationVector, Eigen::Vector3d centerVector);
+        /**
+       * Performs a rotation on a vector.
+       * @param angle The angle to rotate by in radians
+       * @param rotationVector The Vector3d to rotate around, must be a unit
+vector
+       * @param centerVector The Vector3d postion around which to rotate
+       * @param postionVector The Vector3d postion of the vector to rotate
+       * @return A Vector3d with the final postion after the rotation is
+performed.
+       */
+      Eigen::Vector3d performRotation(double angle, Eigen::Vector3d
+rotationVector, Eigen::Vector3d centerVector, Eigen::Vector3d positionVector);
+  };
+
 
   /**
    * @class BondCentricTool
@@ -381,6 +499,7 @@ pos, QUndoCommand *parent = 0);
       Eigen::Vector3d m_pos;
       bool undone;
   };
+
 
   class BondCentricToolFactory : public QObject, public ToolFactory
     {
