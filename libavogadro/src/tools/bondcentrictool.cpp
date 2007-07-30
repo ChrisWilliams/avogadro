@@ -83,6 +83,13 @@ BondCentricTool::~BondCentricTool()
   m_currentReference = NULL;
 
   if (m_settingsWidget)
+    m_snapToAngleLabel->deleteLater();
+    m_spacer->deleteLater();
+    m_showAnglesBox->deleteLater();
+    m_snapToCheckBox->deleteLater();
+    m_snapToAngleBox->deleteLater();
+    m_layout->deleteLater();
+
     m_settingsWidget->deleteLater();
 }
 
@@ -666,7 +673,7 @@ bool BondCentricTool::paint(GLWidget *widget)
   }
 
   if (m_leftButtonPressed && m_clickedAtom && (!m_selectedBond ||
-      !isAtomInBond(m_clickedAtom, m_selectedBond)) && m_showAngles)
+      !isAtomInBond(m_clickedAtom, m_selectedBond)))
   {
     drawAtomAngles(widget, m_clickedAtom);
   }
@@ -685,18 +692,32 @@ bool BondCentricTool::paint(GLWidget *widget)
     widget->painter()->drawText(QPoint(5, widget->height() - 25), length);
     widget->painter()->end();
 
-    if (m_rightButtonPressed && m_showAngles)
+    if (m_rightButtonPressed && (m_clickedAtom == begin || m_clickedAtom == end))
     {
       drawSkeletonAngles(widget, m_skeleton);
     }
-    else if (m_showAngles)
+    else
     {
-      // Draw the angles around the two atoms.
-      if (!m_clickedAtom || m_midButtonPressed || (m_leftButtonPressed && begin != m_clickedAtom))
-        drawAngles(widget, begin, m_selectedBond);
+      if (m_showAngles)
+      {
+        // Draw the angles around the two atoms.
+        if (!m_clickedAtom || m_rightButtonPressed || m_midButtonPressed ||
+             (m_leftButtonPressed && begin != m_clickedAtom))
+              drawAngles(widget, begin, m_selectedBond);
 
-      if (!m_clickedAtom || m_midButtonPressed || (m_leftButtonPressed && end != m_clickedAtom))
-        drawAngles(widget, end, m_selectedBond);
+        if (!m_clickedAtom || m_rightButtonPressed || m_midButtonPressed ||
+             (m_leftButtonPressed && end != m_clickedAtom))
+              drawAngles(widget, end, m_selectedBond);
+      }
+      else
+      {
+        // Draw the angles around the two atoms.
+        if (m_leftButtonPressed && end == m_clickedAtom)
+          drawAngles(widget, begin, m_selectedBond);
+
+        if (m_leftButtonPressed && begin == m_clickedAtom)
+          drawAngles(widget, end, m_selectedBond);
+      }
 
       if (m_clickedAtom && m_leftButtonPressed && isAtomInBond(m_clickedAtom, m_selectedBond))
       {
@@ -1073,11 +1094,11 @@ Eigen::Vector3d BondCentricTool::performRotation(double angle, Eigen::Vector3d r
   double angleHalf = angle/2.0;
   double rotationQw = cos(angleHalf);
   double sinAngle = sin(angleHalf);
-  Vector3d rotationQv = Vector3d(rotationVector.x()*angleHalf,rotationVector.y()*angleHalf,rotationVector.z()*angleHalf);
+  Vector3d rotationQv = Vector3d(rotationVector.x() * sinAngle, rotationVector.y() * sinAngle, rotationVector.z() * sinAngle);
   double directionQw = 0;
   Vector3d directionQv = positionVector - centerVector;
   double tempQw = rotationQw * directionQw - rotationQv.dot(directionQv);
-  Vector3d tempQv = Vector3d(rotationQw*directionQv.x() + rotationQv.x()*directionQw     + rotationQv.y()*directionQv.z() - rotationQv.z()*directionQv.y(),
+  Vector3d tempQv = Vector3d(rotationQw*directionQv.x() + rotationQv.x() * directionQw     + rotationQv.y()*directionQv.z() - rotationQv.z()*directionQv.y(),
                               rotationQw*directionQv.y() - rotationQv.x()*directionQv.z() + rotationQv.y()*directionQw     + rotationQv.z()*directionQv.x(),
                               rotationQw*directionQv.z() + rotationQv.x()*directionQv.y() - rotationQv.y()*directionQv.x() + rotationQv.z()*directionQw     );
   double rotationQnorm2 = (rotationQw*rotationQw+rotationQv.norm2());
@@ -1107,6 +1128,21 @@ void BondCentricTool::snapToCheckBoxChanged(int state)
   m_snapToEnabled = state == Qt::Checked ? true : false;
   m_snapToAngleBox->setEnabled(m_snapToEnabled);
 
+  Eigen::Vector3d *reference = calculateSnapTo(m_glwidget, m_selectedBond, m_referencePoint, m_snapToAngle);
+  if (reference && m_snapToEnabled)
+  {
+    m_snapped = true;
+    delete m_currentReference;
+    m_currentReference = reference;
+    *m_currentReference = m_currentReference->normalized();
+  }
+  else
+  {
+    m_snapped = false;
+    delete m_currentReference;
+    m_currentReference = new Vector3d(*m_referencePoint);
+  }
+
   if (m_glwidget)
     m_glwidget->update();
 }
@@ -1116,6 +1152,24 @@ void BondCentricTool::snapToCheckBoxChanged(int state)
 void BondCentricTool::snapToAngleChanged(int newAngle)
 {
   m_snapToAngle = newAngle;
+
+  Eigen::Vector3d *reference = calculateSnapTo(m_glwidget, m_selectedBond, m_referencePoint, m_snapToAngle);
+  if (reference && m_snapToEnabled)
+  {
+    m_snapped = true;
+    delete m_currentReference;
+    m_currentReference = reference;
+    *m_currentReference = m_currentReference->normalized();
+  }
+  else
+  {
+    m_snapped = false;
+    delete m_currentReference;
+    m_currentReference = new Vector3d(*m_referencePoint);
+  }
+
+  if (m_glwidget)
+    m_glwidget->update();
 }
 
 // ##########  settingsWidget  ##########
@@ -1144,6 +1198,8 @@ QWidget *BondCentricTool::settingsWidget()
     m_snapToAngleBox->setSuffix(QString::fromUtf8("°"));
     m_snapToAngleBox->setEnabled(m_snapToEnabled);
 
+    m_spacer = new QLabel(tr(""));
+
     m_layout = new QGridLayout();
     m_layout->setSpacing(2);
     m_layout->addWidget(m_showAnglesBox, 1, 0);
@@ -1152,7 +1208,7 @@ QWidget *BondCentricTool::settingsWidget()
     m_layout->setRowMinimumHeight(4, 10);
     m_layout->addWidget(m_snapToAngleLabel, 5, 0);
     m_layout->addWidget(m_snapToAngleBox, 6, 0);
-    m_layout->addWidget(new QLabel(tr("")), 7, 0);
+    m_layout->addWidget(m_spacer, 7, 0);
     m_layout->setRowStretch(7, 1);
 
     connect(m_showAnglesBox, SIGNAL(stateChanged(int)), this,
@@ -1165,9 +1221,16 @@ QWidget *BondCentricTool::settingsWidget()
             SLOT(snapToAngleChanged(int)));
 
     m_settingsWidget->setLayout(m_layout);
+
+    connect(m_settingsWidget, SIGNAL(destroyed()),
+            this, SLOT(settingsWidgetDestroyed()));
   }
 
   return m_settingsWidget;
+}
+
+void BondCentricTool::settingsWidgetDestroyed() {
+  m_settingsWidget = 0;
 }
 
 // #########################  SkeletonTranslateCommand  ########################

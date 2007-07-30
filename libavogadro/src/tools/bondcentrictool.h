@@ -152,6 +152,7 @@ namespace Avogadro {
       QPoint              m_lastDraggingPosition;
 
       QLabel *            m_snapToAngleLabel;
+      QLabel *            m_spacer;
       QCheckBox *         m_showAnglesBox;
       QCheckBox *         m_snapToCheckBox;
       QSpinBox *          m_snapToAngleBox;

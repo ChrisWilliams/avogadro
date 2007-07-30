@@ -269,7 +269,8 @@ Eigen::Vector3d SkeletonTree::performRotation(double angle, Eigen::Vector3d rota
   double angleHalf = angle/2.0;
   double rotationQw = cos(angleHalf);
   double sinAngle = sin(angleHalf);
-  Vector3d rotationQv = Vector3d(rotationVector.x()*angleHalf,rotationVector.y()*angleHalf,rotationVector.z()*angleHalf);
+  Vector3d rotationQv = Vector3d(rotationVector.x() * sinAngle, rotationVector.y()
+                                 * sinAngle, rotationVector.z() * sinAngle);
   double directionQw = 0;
   Vector3d directionQv = positionVector - centerVector;
   double tempQw = rotationQw * directionQw - rotationQv.dot(directionQv);
