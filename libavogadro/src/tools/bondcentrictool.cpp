@@ -658,10 +658,10 @@ QUndoCommand* BondCentricTool::mouseRelease(GLWidget *widget, const QMouseEvent*
     m_snapped = false;
     m_selectedBond = NULL;
   }
-  else if (!m_clickedAtom && m_clickedBond && !m_movedSinceButtonPressed) {
+//  else if (!m_clickedAtom && m_clickedBond && !m_movedSinceButtonPressed) {
+  else if (!m_movedSinceButtonPressed) {
     m_undo = 0;
   }
-
   if (m_skeleton)
   {
     delete m_skeleton;
