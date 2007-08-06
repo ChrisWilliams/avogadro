@@ -27,6 +27,8 @@
  **********************************************************************/
 
 #include "bondcentrictool.h"
+#include "quaternion.h"
+
 #include <avogadro/primitive.h>
 #include <avogadro/color.h>
 #include <avogadro/glwidget.h>
@@ -43,279 +45,6 @@ using namespace std;
 using namespace OpenBabel;
 using namespace Avogadro;
 using namespace Eigen;
-
-// ################################## Node #####################################
-
-// ##########  Constructor  ##########
-
-Node::Node(Atom *atom)
-{
-  m_atom = atom;
-}
-
-// ##########  Destructor  ##########
-
-Node::~Node() {}
-
-// ##########  atom  ##########
-
-Atom* Node::atom()
-{
-  return m_atom;
-}
-
-// ##########  nodes  ##########
-
-QList<Node*> *Node::nodes()
-{
-  return &m_nodes;
-}
-
-// ##########  isLeaf  ##########
-
-bool Node::isLeaf()
-{
-  return m_nodes.isEmpty();
-}
-
-// ##########  containsAtom  ##########
-
-bool Node::containsAtom(Atom* atom)
-{
-  //"atom" exist in the children and grandchildren... of this node.?
-  bool exists = false;
-  if (m_atom == atom) {
-    return true;
-  }
-
-  for (int i = 0; i < m_nodes.size(); i++)
-  {
-    Node* n = m_nodes.at(i);
-    if (n->containsAtom(atom))
-    {
-      exists = true;
-      break;
-    }
-  }
-
-  return exists;
-}
-
-// ##########  addNode  ##########
-
-void Node::addNode(Node* node)
-{
-  m_nodes.append(node);
-}
-
-// ##########  removeNode  ##########
-
-void Node::removeNode(Node* node)
-{
-  int i = m_nodes.indexOf(node);
-
-  if (i != -1) {
-    m_nodes.removeAt(i);
-  }
-}
-
-/*void Node::setLeaf(bool leaf)
-{
-  m_leaf = leaf;
-}*/
-
-// ############################## SkeletonTree #################################
-
-// ##########  Constructor  ##########
-
-SkeletonTree::SkeletonTree() {}
-
-// ##########  Destructor  ##########
-
-SkeletonTree::~SkeletonTree() 
-{
-  delete m_rootNode;
-}
-
-// ##########  rootAtom  ##########
-
-Atom* SkeletonTree::rootAtom()
-{
-  return m_rootNode->atom();
-}
-
-// ##########  rootBond  ##########
-
-Bond* SkeletonTree::rootBond()
-{
-  return m_rootBond;
-}
-
-// ##########  populate  ##########
-
-void SkeletonTree::populate(Atom *rootAtom, Bond *rootBond, Molecule* molecule)
-{
-  if (!m_rootNode) {
-    delete m_rootNode;
-  }
-
-  m_rootNode = new Node(rootAtom);
-
-  m_rootBond = rootBond;
-
-  Atom* bAtom = static_cast<Atom*>(m_rootBond->GetBeginAtom());
-  Atom* eAtom = static_cast<Atom*>(m_rootBond->GetEndAtom());
-
-  if (bAtom != m_rootNode->atom() && eAtom != m_rootNode->atom()) {
-    return;
-  }
-
-  Atom* diffAtom = (bAtom == m_rootNode->atom()) ? eAtom : bAtom;
-
-  //A temproray tree to find loops
-  m_endNode = new Node(diffAtom);
-
-  //Recursively go through molecule and make a temproray tree.
-  //starting from m_endNode
-  recursivePopulate(molecule, m_endNode, m_rootBond);
-
-  //Recursively go through molecule and make the tree.
-  //starting from m_rootNode
-  recursivePopulate(molecule, m_rootNode, m_rootBond);
-
-  //delete the temporary tree
-  delete m_endNode;
-
-  //for debugging puposes
-  //printSkeleton(m_rootNode);
-}
-
-// ##########  recursivePopulate  ##########
-
-void SkeletonTree::recursivePopulate(Molecule* mol, Node* node, Bond* bond)
-{
-  Atom* atom = node->atom();
-  int found = 0;
-
-  for (unsigned int i=0; i < mol->NumBonds(); i++)
-  {
-    Bond* b = static_cast<Bond*>(mol->GetBond(i));
-    Atom* bAtom = static_cast<Atom*>(b->GetBeginAtom());
-    Atom* eAtom = static_cast<Atom*>(b->GetEndAtom());
-
-    if ((b != bond) && ((bAtom == atom) || (eAtom == atom)))
-    {
-      Atom* diffAtom = (bAtom == atom) ? eAtom : bAtom;
-
-      //Check if this atom already exists, so not to form loops
-      if ((!m_endNode->containsAtom(diffAtom)) &&
-          (!m_rootNode->containsAtom(diffAtom)))
-      {
-        Node* newNode = new Node(diffAtom);
-        node -> addNode(newNode);
-        found++;
-        recursivePopulate(mol, newNode, b);
-      }
-    }
-  }
-
-/*  if (found == 0)
-    node->setLeaf(true);*/
-}
-
-// ##########  skeletonTranslate  ##########
-
-void SkeletonTree::skeletonTranslate(double dx, double dy, double dz)
-{
-  if (m_rootNode) {
-    //Translate skeleton
-    recursiveTranslate(m_rootNode, dx, dy, dz);
-  }
-}
-
-// ##########  skeletonRotate  ##########
-
-void SkeletonTree::skeletonRotate(double angle, Eigen::Vector3d rotationVector,
-                                  Eigen::Vector3d centerVector)
-{
-  if (m_rootNode) {
-    //Rotate skeleton
-    Quaternion qLeft = Quaternion::createRotationLeftHalf(angle, rotationVector);
-    Quaternion qRight = qLeft.multiplicitiveInverse();
-    recursiveRotate(m_rootNode, qLeft, qRight, centerVector);
-  }
-}
-
-// ##########  recursiveTranslate  ##########
-
-void SkeletonTree::recursiveTranslate(Node* n, double x, double y, double z)
-{
-  QList<Node*>* listNodes = n->nodes();
-  Atom* a = n->atom();
-
-  a->SetVector(a->x() + x, a->y() + y, a->z() + z);
-
-  for (int i = 0; i < listNodes->size(); i++)
-  {
-    Node* node = listNodes->at(i);
-    recursiveTranslate(node, x, y, z);
-  }
-}
-
-// ##########  recursiveRotate  ##########
-
-void SkeletonTree::recursiveRotate(Node* n, Quaternion left, Quaternion right, 
-                                   Eigen::Vector3d centerVector)
-{
-  QList<Node*>* listNodes = n->nodes();
-  Atom* a = n->atom();
-  Vector3d final = performRotation(left, right, centerVector, a->pos());
-
-  a->SetVector(final.x(), final.y(), final.z());
-
-  for (int i = 0; i < listNodes->size(); i++)
-  {
-    Node* node = listNodes->at(i);
-    recursiveRotate(node, left, right, centerVector);
-  }
-}
-
-// ##########  printSkeleton  ##########
-
-void SkeletonTree::printSkeleton(Node* n)
-{
-  QList<Node*>* listNodes = n->nodes();
-
-  for (int i = 0; i < listNodes->size(); i++)
-  {
-    Node* n = listNodes->at(i);
-    printSkeleton(n);
-  }
-
-  Atom* a = n->atom();
-  cout << a->x() << "," << a->y()<< ","<<a->z() << endl;
-
-  if (!n->isLeaf()) {
-    cout << "-------------" << endl;
-  }
-}
-
-// ##########  containsAtom  ##########
-
-bool SkeletonTree::containsAtom(Atom *atom)
-{
-  return m_rootNode ? m_rootNode->containsAtom(atom) : false;
-}
-
-// ##########  performRotation  ##########
-
-Eigen::Vector3d SkeletonTree::performRotation(Quaternion left, Quaternion right, 
-                                              Eigen::Vector3d centerVector,
-                                              Eigen::Vector3d positionVector)
-{
-  return Quaternion::performRotationMultiplication(left, positionVector -
-                      centerVector, right) + centerVector;
-}
 
 // ############################ BondCentricTool ################################
 
@@ -625,8 +354,8 @@ QUndoCommand* BondCentricTool::mousePress(GLWidget *widget, const QMouseEvent *e
         m_referencePoint = A.norm() >= B.norm() ? new Vector3d(A) : new Vector3d(B);
         *m_referencePoint = m_referencePoint->normalized();
 
-        Vector3d *reference = calculateSnapTo(widget, m_selectedBond, m_referencePoint,
-                                              m_snapToAngle);
+        Vector3d *reference = calculateSnapTo(widget, m_selectedBond,
+                                              m_referencePoint, m_snapToAngle);
 
         if (reference && m_snapToEnabled)
         {
@@ -639,6 +368,16 @@ QUndoCommand* BondCentricTool::mousePress(GLWidget *widget, const QMouseEvent *e
         }
       }
     }
+    /*else if (m_rightButtonPressed)
+    {
+      m_selectedBond = m_clickedBond;
+
+      delete m_referencePoint;
+      m_referencePoint = NULL;
+
+      delete m_currentReference;
+      m_currentReference = NULL;
+    }*/
   }
 
   m_glwidget->update();
@@ -975,62 +714,133 @@ bool BondCentricTool::paint(GLWidget *widget)
     Atom *begin = static_cast<Atom*>(m_selectedBond->GetBeginAtom());
     Atom *end = static_cast<Atom*>(m_selectedBond->GetEndAtom());
 
-    // Draw bond length text.
-    QString length = tr("Bond Length:  ") + 
-                     QString::number(m_selectedBond->GetLength(), 10, 1) +
-                     QString::fromUtf8(" Å (Angstrom)");
-
-    widget->painter()->begin(widget);
-    widget->painter()->drawText(QPoint(5, widget->height() - 25), length);
-    widget->painter()->end();
-
-    if (m_rightButtonPressed && (m_clickedAtom == begin || m_clickedAtom == end)) {
-      drawSkeletonAngles(widget, m_skeleton);
-    }
-    else
+    if (m_currentReference)
     {
-      if (m_showAngles)
-      {
-        // Draw the angles around the two atoms.
-        if (!m_clickedAtom || m_rightButtonPressed || m_midButtonPressed ||
-            (m_leftButtonPressed && begin != m_clickedAtom)) {
-          drawAngles(widget, begin, m_selectedBond);
-        }
+      // Draw bond length text.
+      QString length = tr("Bond Length:  ") + 
+                      QString::number(m_selectedBond->GetLength(), 10, 1) +
+                      QString::fromUtf8(" Å (Angstrom)");
 
-        if (!m_clickedAtom || m_rightButtonPressed || m_midButtonPressed ||
-            (m_leftButtonPressed && end != m_clickedAtom)) {
-          drawAngles(widget, end, m_selectedBond);
-        }
+      widget->painter()->begin(widget);
+      widget->painter()->drawText(QPoint(5, widget->height() - 25), length);
+      widget->painter()->end();
+
+      if (m_rightButtonPressed && (m_clickedAtom == begin || m_clickedAtom == end)) {
+        drawSkeletonAngles(widget, m_skeleton);
       }
       else
       {
-        // Draw the angles around the two atoms.
-        if (m_leftButtonPressed && end == m_clickedAtom) {
-          drawAngles(widget, begin, m_selectedBond);
+        if (m_showAngles)
+        {
+          // Draw the angles around the two atoms.
+          if (!m_clickedAtom || m_rightButtonPressed || m_midButtonPressed ||
+              (m_leftButtonPressed && begin != m_clickedAtom)) {
+            drawAngles(widget, begin, m_selectedBond);
+          }
+
+          if (!m_clickedAtom || m_rightButtonPressed || m_midButtonPressed ||
+              (m_leftButtonPressed && end != m_clickedAtom)) {
+            drawAngles(widget, end, m_selectedBond);
+          }
+        }
+        else
+        {
+          // Draw the angles around the two atoms.
+          if (m_leftButtonPressed && end == m_clickedAtom) {
+            drawAngles(widget, begin, m_selectedBond);
+          }
+
+          if (m_leftButtonPressed && begin == m_clickedAtom) {
+            drawAngles(widget, end, m_selectedBond);
+          }
         }
 
-        if (m_leftButtonPressed && begin == m_clickedAtom) {
-          drawAngles(widget, end, m_selectedBond);
+        if (m_clickedAtom && m_leftButtonPressed && 
+            isAtomInBond(m_clickedAtom, m_selectedBond)) {
+          drawSkeletonAngles(widget, m_skeleton);
         }
       }
 
-      if (m_clickedAtom && m_leftButtonPressed && 
-          isAtomInBond(m_clickedAtom, m_selectedBond)) {
-        drawSkeletonAngles(widget, m_skeleton);
+      // Draw the manipulation rectangle.
+      if (m_snapped && m_snapToEnabled)
+      {
+        double rgb[3] = {1.0, 1.0, 0.2};
+        drawManipulationRectangle(widget, m_selectedBond, m_currentReference, rgb);
+      }
+      else
+      {
+        double rgb[3] = {0.0, 0.2, 0.8};
+        drawManipulationRectangle(widget, m_selectedBond, m_currentReference, rgb);
       }
     }
+    /*else
+    {
+      OBBondIterator bondIter = begin->EndBonds();
+      Atom *v = (Atom*)begin->BeginNbrAtom(bondIter);
 
-    // Draw the manipulation rectangle.
-    if (m_snapped && m_snapToEnabled)
-    {
-      double rgb[3] = {1.0, 1.0, 0.2};
-      drawManipulationRectangle(widget, m_selectedBond, m_currentReference, rgb);
-    }
-    else
-    {
-      double rgb[3] = {0.0, 0.2, 0.8};
-      drawManipulationRectangle(widget, m_selectedBond, m_currentReference, rgb);
-    }
+      if (v != NULL)
+      {
+        do
+        {
+          if (v == end) {
+            continue;
+          }
+          else
+          {
+            Vector3d tmp1 = end->pos() - begin->pos();
+            Vector3d tmp2 = v->pos() - begin->pos();
+            double tAngle = acos(tmp1.dot(tmp2) / (tmp2.norm() * tmp1.norm()))
+                            * 180.0 / M_PI;
+
+            if(!(tAngle > 1 && tAngle < 179)) {
+              continue;
+            }
+          }
+
+          Vector3d vVec = v->pos() - begin->pos();
+          vVec = vVec.normalized();
+
+          Vector3d tmp = end->pos() - begin->pos();
+          vVec = begin->pos() + vVec * tmp.norm();
+
+          drawAngleSector(widget, begin->pos(), end->pos(), vVec);
+        }
+        while ((v = (Atom*)begin->NextNbrAtom(bondIter)) != NULL);
+      }
+
+      bondIter = end->EndBonds();
+      v = (Atom*)end->BeginNbrAtom(bondIter);
+
+      if (v != NULL)
+      {
+        do
+        {
+          if (v == begin) {
+            continue;
+          }
+          else
+          {
+            Eigen::Vector3d tmp1 = begin->pos() - end->pos();
+            Eigen::Vector3d tmp2 = v->pos() - end->pos();
+            double tAngle = acos(tmp1.dot(tmp2) / (tmp2.norm() * tmp1.norm()))
+                  * 180.0 / M_PI;
+
+            if(!(tAngle > 1 && tAngle < 179)) {
+              continue;
+            }
+          }
+
+          Vector3d vVec = v->pos() - end->pos();
+          vVec = vVec.normalized();
+
+          Vector3d tmp = begin->pos() - end->pos();
+          vVec = end->pos() + vVec * tmp.norm();
+
+          drawAngleSector(widget, end->pos(), begin->pos(), vVec);
+        }
+        while ((v = (Atom*)end->NextNbrAtom(bondIter)) != NULL);
+      }
+    }*/
   }
 
   return true;
@@ -1339,7 +1149,7 @@ Eigen::Vector3d* BondCentricTool::calculateSnapTo(GLWidget *widget, Bond *bond,
 
 // ##########  drawManipulationRectangle  ##########
 
-void BondCentricTool::drawManipulationRectangle(GLWidget *widget, Bond *bond, 
+void BondCentricTool::drawManipulationRectangle(GLWidget *widget, Bond *bond,
     Eigen::Vector3d *referencePoint, double rgb[3])
 {
   if (!bond || !widget || !referencePoint) {
@@ -1406,7 +1216,7 @@ Eigen::Vector3d BondCentricTool::performRotation(double angle,
   Quaternion qRight = qLeft.multiplicitiveInverse();
 
   return Quaternion::performRotationMultiplication(qLeft, positionVector -
-      centerVector, qRight) + centerVector;
+                     centerVector, qRight) + centerVector;
 }
 
 // ##########  showAnglesChanged  ##########
@@ -1617,119 +1427,6 @@ int BondCentricMoveCommand::id() const
 {
   //changed from 26011980[manipulatetool]
   return 26011981;
-}
-
-// ############################# Quaternion ####################################
-
-// ##########  Constructor  ##########
-
-Quaternion::Quaternion(double w, double x, double y, double z)
-{
-  m_W = w;
-  m_V = Vector3d(x,y,z);
-}
-
-// ##########  Constructor  ##########
-
-Quaternion::Quaternion(double w, Vector3d v)
-{
-  m_W = w;
-  m_V = v;
-}
-
-// ##########  w  ##########
-
-double Quaternion::w()
-{
-  return m_W;
-}
-
-// ##########  x  ##########
-
-double Quaternion::x()
-{
-  return m_V.x();
-}
-
-// ##########  y  ##########
-
-double Quaternion::y()
-{
-  return m_V.y();
-}
-
-// ##########  z  ##########
-
-double Quaternion::z()
-{
-  return m_V.z();
-}
-
-// ##########  v  ##########
-
-Vector3d Quaternion::v()
-{
-  return m_V;
-}
-
-// ##########  norm  ##########
-
-double Quaternion::norm()
-{
-  return sqrt(norm2());
-}
-
-// ##########  norm2  ##########
-
-double Quaternion::norm2()
-{
-  return w() * w() + v().norm2();
-}
-
-// ##########  multiply  ##########
-
-Quaternion Quaternion::multiply(Quaternion right)
-{
-  return Quaternion(w() * right.w() - v().dot(right.v()),
-                    w() * right.x() + x() * right.w() + y() * right.z() - z() * right.y(),
-                    w() * right.y() - x() * right.z() + y() * right.w() + z() * right.x(),
-                    w() * right.z() + x() * right.y() - y() * right.x() + z() * right.w());
-}
-
-// ##########  multiplyToVector  ##########
-
-Vector3d Quaternion::multiplyToVector(Quaternion right)
-{
-  return Vector3d(w() * right.x() + x() * right.w() + y() * right.z() - z() * right.y(),
-                  w() * right.y() - x() * right.z() + y() * right.w() + z() * right.x(),
-                  w() * right.z() + x() * right.y() - y() * right.x() + z() * right.w());
-}
-
-// ##########  multiplicitiveInverse  ##########
-
-Quaternion Quaternion::multiplicitiveInverse()
-{
-  double divisor = norm2();
-  return Quaternion(w() / divisor, - v() / divisor);
-}
-
-// ##########  createRotationLeftHalf  ##########
-
-Quaternion Quaternion::createRotationLeftHalf(double theta, Vector3d rotationVector)
-{
-  double angleHalf = theta/2.0;
-  double sinAngle = sin(angleHalf);
-
-  return Quaternion(cos(angleHalf), rotationVector.x() * sinAngle, 
-                    rotationVector.y() * sinAngle, rotationVector.z() * sinAngle);
-}
-
-// ##########  performRotationMultiplication  ##########
-
-Vector3d Quaternion::performRotationMultiplication(Quaternion left, 
-    Vector3d direction, Quaternion right)
-{
-  return left.multiply(Quaternion(0,direction)).multiplyToVector(right);
 }
 
 #include "bondcentrictool.moc"
