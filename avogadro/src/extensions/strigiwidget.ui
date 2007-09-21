@@ -1,0 +1,151 @@
+<ui version="4.0" >
+ <class>StrigiWidget</class>
+ <widget class="QWidget" name="StrigiWidget" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>587</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>Searching for molecules on your computer</string>
+  </property>
+  <layout class="QGridLayout" >
+   <item row="0" column="0" >
+    <layout class="QHBoxLayout" >
+     <item>
+      <widget class="QLabel" name="label_2" >
+       <property name="text" >
+        <string>Name</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="lineEdit_2" />
+     </item>
+    </layout>
+   </item>
+   <item row="0" column="1" >
+    <layout class="QHBoxLayout" >
+     <item>
+      <widget class="QLabel" name="label" >
+       <property name="text" >
+        <string>SMILE</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="lineEdit" />
+     </item>
+    </layout>
+   </item>
+   <item row="1" column="0" >
+    <widget class="QGroupBox" name="groupBox" >
+     <property name="title" >
+      <string>Weight</string>
+     </property>
+     <layout class="QGridLayout" >
+      <item row="0" column="0" >
+       <widget class="QLabel" name="label_3" >
+        <property name="text" >
+         <string>Min:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1" >
+       <widget class="QDoubleSpinBox" name="doubleSpinBox" />
+      </item>
+      <item row="1" column="0" >
+       <widget class="QLabel" name="label_4" >
+        <property name="text" >
+         <string>Max:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1" >
+       <widget class="QDoubleSpinBox" name="doubleSpinBox_2" />
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="1" column="1" >
+    <widget class="QGroupBox" name="groupBox_2" >
+     <property name="title" >
+      <string>Boilingpoint</string>
+     </property>
+     <layout class="QGridLayout" >
+      <item row="0" column="0" >
+       <widget class="QLabel" name="label_5" >
+        <property name="text" >
+         <string>Min:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1" >
+       <widget class="QDoubleSpinBox" name="doubleSpinBox_3" />
+      </item>
+      <item row="1" column="0" >
+       <widget class="QLabel" name="label_6" >
+        <property name="text" >
+         <string>Max:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1" >
+       <widget class="QDoubleSpinBox" name="doubleSpinBox_4" />
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="2" column="0" colspan="2" >
+    <widget class="QTableWidget" name="tableWidget" >
+     <property name="enabled" >
+      <bool>false</bool>
+     </property>
+     <property name="toolTip" >
+      <string>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">This table shows you the found molecules.&lt;/p>&lt;/body>&lt;/html></string>
+     </property>
+     <column>
+      <property name="text" >
+       <string>Name</string>
+      </property>
+     </column>
+     <column>
+      <property name="text" >
+       <string>Formula</string>
+      </property>
+     </column>
+     <column>
+      <property name="text" >
+       <string>Weight [u]</string>
+      </property>
+     </column>
+    </widget>
+   </item>
+   <item row="3" column="0" >
+    <widget class="QPushButton" name="searchButton" >
+     <property name="toolTip" >
+      <string>This button starts the search for molecules</string>
+     </property>
+     <property name="text" >
+      <string>Search</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1" >
+    <widget class="QPushButton" name="openButton" >
+     <property name="text" >
+      <string>Open in Avogadro</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

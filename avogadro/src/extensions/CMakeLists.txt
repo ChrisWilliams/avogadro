@@ -97,3 +97,16 @@ TARGET_LINK_LIBRARIES(h2methylextension
 	avogadro-lib
 )
 INSTALL(TARGETS h2methylextension DESTINATION ${DESTINATION_DIR})
+
+### Strigi
+set(strigiextension_SRCS strigiextension.cpp)
+qt4_wrap_ui(strigiextension_UIS_H strigiwidget.ui)
+qt4_automoc(${strigiextension_SRCS})
+ADD_LIBRARY(strigiextension SHARED ${strigiextension_SRCS} ${strigiextension_UIS_H})
+TARGET_LINK_LIBRARIES(strigiextension
+	${OPENBABEL2_LIBRARIES}
+	${QT_LIBRARIES}
+   ${OPENGL_LIBRARIES}
+	avogadro-lib
+)
+INSTALL(TARGETS strigiextension DESTINATION ${DESTINATION_DIR})
