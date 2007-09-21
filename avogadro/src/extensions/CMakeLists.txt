@@ -17,7 +17,7 @@ include_directories(
 	${AVOGADRO_INCLUDE_DIR}
 )
 
-link_directories(${CMAKE_CURRENT_BINARY_DIR}/..)
+link_directories(${CMAKE_CURRENT_BINARY_DIR}/.. )
 
 ### gamess
 set(gamessextension_SRCS gamessextension.cpp

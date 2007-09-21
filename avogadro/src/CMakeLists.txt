@@ -10,7 +10,8 @@ configure_file(
   ${CMAKE_CURRENT_BINARY_DIR}/config.h
 )
 
-LINK_DIRECTORIES(${LINK_DIRECTORIES} ${libavogadro_BINARY_DIR}/src)
+LINK_DIRECTORIES(${LINK_DIRECTORIES} ${libavogadro_BINARY_DIR}/src ${QT_QTDBUS_LIBRARY})
+MESSAGE(STATUS "The linkdir for DBus is ${QT_QTDBUS_LIBRARY}")
 
 include_directories(
   ${libavogadro_SOURCE_DIR}/include

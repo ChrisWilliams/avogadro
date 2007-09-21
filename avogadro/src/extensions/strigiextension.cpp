@@ -25,6 +25,8 @@
 
 #include <QtGui>
 #include <QDialog>
+#include <QtDBus/QDBusInterface>
+#include <QtDBus/QDBusReply>
 
 using namespace std;
 using namespace OpenBabel;
@@ -41,6 +43,12 @@ namespace Avogadro {
     ui = new Ui::StrigiWidget();
     ui->setupUi(t);
     t->show();
+
+    QDBusInterface strigiiface("vandenoever.strigi", "/search");
+    QDBusReply<QString> reply = strigiiface.call( "GetState" );
+    if ( reply.isValid() ) {
+           qDebug() << "The reply: " << reply;
+    }
  
 //X     connect(m_Dialog, SIGNAL(StrigiDisplayChanged(int, int, int)),
 //X             this, SLOT(StrigiDisplayChanged(int, int, int)));
