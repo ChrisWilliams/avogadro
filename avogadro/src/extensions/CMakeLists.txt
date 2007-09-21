@@ -15,9 +15,10 @@ include_directories(
 	${OPENBABEL2_INCLUDE_DIR}
 	${EIGEN_INCLUDE_DIR}
 	${AVOGADRO_INCLUDE_DIR}
+   ${QT_QTDBUS_INCLUDE_DIR}
 )
 
-link_directories(${CMAKE_CURRENT_BINARY_DIR}/.. )
+link_directories(${LINK_DIRECTORIES} ${CMAKE_CURRENT_BINARY_DIR}/.. )
 
 ### gamess
 set(gamessextension_SRCS gamessextension.cpp
@@ -107,6 +108,7 @@ TARGET_LINK_LIBRARIES(strigiextension
 	${OPENBABEL2_LIBRARIES}
 	${QT_LIBRARIES}
    ${OPENGL_LIBRARIES}
+   QtDBus
 	avogadro-lib
 )
 INSTALL(TARGETS strigiextension DESTINATION ${DESTINATION_DIR})

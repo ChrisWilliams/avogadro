@@ -10,8 +10,7 @@ configure_file(
   ${CMAKE_CURRENT_BINARY_DIR}/config.h
 )
 
-LINK_DIRECTORIES(${LINK_DIRECTORIES} ${libavogadro_BINARY_DIR}/src ${QT_QTDBUS_LIBRARY})
-MESSAGE(STATUS "The linkdir for DBus is ${QT_QTDBUS_LIBRARY}")
+LINK_DIRECTORIES(${LINK_DIRECTORIES} ${libavogadro_BINARY_DIR}/src)
 
 include_directories(
   ${libavogadro_SOURCE_DIR}/include
@@ -47,7 +46,7 @@ add_executable(avogadro-app WIN32 MACOSX_BUNDLE
 
 SET_TARGET_PROPERTIES(avogadro-app PROPERTIES OUTPUT_NAME avogadro)
 
-TARGET_LINK_LIBRARIES(avogadro-app ${OPENBABEL2_LIBRARIES} ${QT_LIBRARIES}
+TARGET_LINK_LIBRARIES(avogadro-app ${OPENBABEL2_LIBRARIES} ${QT_LIBRARIES} 
     avogadro-lib)
 
 IF( APPLE )
