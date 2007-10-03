@@ -44,6 +44,20 @@ TARGET_LINK_LIBRARIES(bondcentrictool
 )
 INSTALL(TARGETS bondcentrictool DESTINATION ${DESTINATION_DIR})
 
+### bondcentrictool
+set(bondcentrictool_SRCS bondcentrictool.cpp)
+qt4_add_resources(bondcentrictool_RC_SRCS bondcentrictool.qrc)
+qt4_automoc(${bondcentrictool_SRCS})
+ADD_LIBRARY(bondcentrictool SHARED skeletontree.cpp quaternion.cpp navigate.cpp
+                            ${bondcentrictool_SRCS} ${bondcentrictool_RC_SRCS})
+TARGET_LINK_LIBRARIES(bondcentrictool
+  ${OPENBABEL2_LIBRARIES}
+  ${QT_LIBRARIES}
+  ${OPENGL_LIBRARIES}
+  avogadro-lib
+)
+INSTALL(TARGETS bondcentrictool DESTINATION ${DESTINATION_DIR})
+
 ### clickmeasuretool
 set(clickmeasuretool_SRCS clickmeasuretool.cpp)
 qt4_add_resources(clickmeasuretool_RC_SRCS clickmeasuretool.qrc)
@@ -69,6 +83,21 @@ TARGET_LINK_LIBRARIES(selectrotatetool
 	avogadro-lib
 )
 INSTALL(TARGETS selectrotatetool DESTINATION ${DESTINATION_DIR})
+
+### autoopttool
+set(autoopttool_SRCS autoopttool.cpp)
+qt4_wrap_ui(autoopttool_UIS_H autoopttool.ui)
+qt4_add_resources(autoopttool_RC_SRCS autoopttool.qrc)
+qt4_automoc(${autoopttool_SRCS})
+ADD_LIBRARY(autoopttool SHARED navigate.cpp
+	${autoopttool_SRCS} ${autoopttool_RC_SRCS} ${autoopttool_UIS_H})
+TARGET_LINK_LIBRARIES(autoopttool
+	${OPENBABEL2_LIBRARIES}
+	${QT_LIBRARIES}
+	${OPENGL_LIBRARIES}
+	avogadro-lib
+)
+INSTALL(TARGETS autoopttool DESTINATION ${DESTINATION_DIR})
 
 ### navigatetool
 set(navigatetool_SRCS navigatetool.cpp)

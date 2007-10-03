@@ -176,6 +176,20 @@ namespace Avogadro {
       bool isAtomInBond(Atom *atom, Bond *bond);
 
       /**
+       * Checks whether the two given atoms share a bond between them.
+       *
+       * @param atom1 The first atom.
+       * @param atom2 The second atom.
+       *
+       * @return True if a bond is found between the two given atoms, false
+       *         otherwise or if either of the atoms are NULL or if they're the
+       *         same atom.
+       */
+      bool areAtomsBonded(Atom *atom1, Atom *atom2);
+
+      void drawDihedralAngle(GLWidget *widget, Atom *A, Atom *D, Bond *BC);
+
+      /**
        * Draws a sector that shows the angle between two lines from a given origin.
        *
        * @param widget The widget this angle-sector will be drawn on.
@@ -220,6 +234,7 @@ namespace Avogadro {
        */
       void drawSkeletonAngles(GLWidget *widget, SkeletonTree *skeleton);
 
+      void drawDihedralAngles(GLWidget *widget, Atom *A, Bond *BC);
       /**
        * Calculates whether the manipulation plane is close enough to any atoms (that
        * are 1 bond away from either of the atoms attached to the given bond) to
@@ -260,6 +275,10 @@ namespace Avogadro {
       void drawManipulationRectangle(GLWidget *widget, Bond *bond, 
                                      Eigen::Vector3d *referencePoint, double rgb[3]);
 
+      void drawDihedralRectangle(GLWidget *widget, Bond *bond, Atom *atom, double rgb[3]);
+
+      void drawDihedralRectanglesOfAtom(GLWidget *widget, Bond *bond, Atom *atom, double rgb[3]);
+
       /**
        * Draws a sphere of a given radius around a given vector.
        *
@@ -271,16 +290,6 @@ namespace Avogadro {
       void drawSphere(GLWidget *widget, const Eigen::Vector3d &center, double radius,
                       float alpha);
       //@}
-
-      /**
-       * Connects this tool to the widget's ToolGroup so as to detect the signal
-       * emitted when the tool changes.
-       *
-       * @param widget The GLWidget containing the ToolGroup being connected to.
-       * @param toolGroup A pointer that will be (or is already) set to the
-       *                  ToolGroup being connected to.
-       */
-      void connectToolGroup(GLWidget *widget, ToolGroup *toolGroup);
 
       /**
        * Clears any data and frees up any memory that is used by the tool.  This
@@ -309,9 +318,9 @@ namespace Avogadro {
       /**
        * Function to be called when the tool is changed.
        *
-       * @param tool The currently selected tool.
+       * @param tool True if our tool is selected.
        */
-      void toolChanged(Tool* tool);
+      void toolChanged(bool checked);
 
       /**
        * Functnion to be called when the molecule is changed.
